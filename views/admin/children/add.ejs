@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(135deg, var(--dark-color) 0%, #2c3e50 100%);
+            color: white;
+            z-index: 1000;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-logo {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .sidebar-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .menu-section {
+            margin-bottom: 30px;
+        }
+
+        .menu-title {
+            padding: 0 20px;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            opacity: 0.5;
+            font-weight: 600;
+        }
+
+        .menu-item {
+            display: block;
+            padding: 15px 20px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .menu-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: var(--primary-color);
+        }
+
+        .menu-item.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-left-color: var(--primary-color);
+        }
+
+        .menu-item i {
+            width: 25px;
+            margin-right: 10px;
+        }
+
+        /* Header Styles */
+        .top-header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        .content-area {
+            padding: 30px;
+        }
+
+        /* Form Styles */
+        .form-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--dark-color);
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        }
+
+        .form-control.is-invalid {
+            border-color: var(--danger-color);
+        }
+
+        .invalid-feedback {
+            display: block;
+            color: var(--danger-color);
+            font-size: 0.875rem;
+            margin-top: 5px;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,123,255,0.3);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .btn-submit.loading .loading-spinner {
+            display: inline-block;
+        }
+
+        .btn-submit.loading .btn-text {
+            display: none;
+        }
+
+        /* Photo Upload */
+        .photo-upload {
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .photo-upload:hover {
+            border-color: var(--primary-color);
+            background: rgba(0,123,255,0.05);
+        }
+
+        .photo-upload.dragover {
+            border-color: var(--primary-color);
+            background: rgba(0,123,255,0.1);
+        }
+
+        .photo-preview {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin: 0 auto 15px;
+        }
+
+        /* Mobile Toggle */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .mobile-toggle {
+                display: block;
+            }
+
+            .content-area {
+                padding: 20px;
+            }
+
+            .form-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-bus"></i>
+            </div>
+            <div class="sidebar-title">UGO Admin</div>
+            <div class="sidebar-subtitle">Transport Management</div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-title">Main</div>
+                <a href="/admin/dashboard" class="menu-item">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+                <a href="/admin/parents" class="menu-item">
+                    <i class="fas fa-users"></i>
+                    Parents
+                </a>
+                <a href="/admin/children" class="menu-item active">
+                    <i class="fas fa-child"></i>
+                    Children
+                </a>
+                <a href="/admin/schools" class="menu-item">
+                    <i class="fas fa-school"></i>
+                    Schools
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">Integrations</div>
+                <a href="/admin/integrations" class="menu-item">
+                    <i class="fas fa-plug"></i>
+                    3rd Party Integration
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">System</div>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+                <a href="/admin/logout" class="menu-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-header">
+            <h1 class="page-title">Add New Child</h1>
+            <div class="header-actions">
+                <a href="/admin/children" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Children
+                </a>
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-2"></i><%= user ? user.firstName : 'Admin' %>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/admin/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="form-container">
+                <form id="addChildForm">
+                    <!-- Basic Information -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-child me-2"></i>Basic Information
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="firstName" class="form-label">First Name *</label>
+                                <input type="text" class="form-control" id="firstName" name="firstName" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="lastName" class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" id="lastName" name="lastName" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="dateOfBirth" class="form-label">Date of Birth *</label>
+                                <input type="date" class="form-control" id="dateOfBirth" name="dateOfBirth" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="grade" class="form-label">Grade *</label>
+                                <select class="form-select" id="grade" name="grade" required>
+                                    <option value="">Select Grade</option>
+                                    <option value="Kindergarten 1">Kindergarten 1</option>
+                                    <option value="Kindergarten 2">Kindergarten 2</option>
+                                    <option value="Kindergarten 3">Kindergarten 3</option>
+                                    <option value="Grade 1">Grade 1</option>
+                                    <option value="Grade 2">Grade 2</option>
+                                    <option value="Grade 3">Grade 3</option>
+                                    <option value="Grade 4">Grade 4</option>
+                                    <option value="Grade 5">Grade 5</option>
+                                    <option value="Grade 6">Grade 6</option>
+                                    <option value="Grade 7">Grade 7</option>
+                                    <option value="Grade 8">Grade 8</option>
+                                    <option value="Grade 9">Grade 9</option>
+                                    <option value="Grade 10">Grade 10</option>
+                                    <option value="Grade 11">Grade 11</option>
+                                    <option value="Grade 12">Grade 12</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="gender" class="form-label">Gender *</label>
+                                <select class="form-select" id="gender" name="gender" required>
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Parent Information -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-users me-2"></i>Parent Information
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="parent" class="form-label">Parent *</label>
+                                <select class="form-select" id="parent" name="parent" required>
+                                    <option value="">Loading parents...</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                                <small class="text-muted">Select the parent for this child. If parent not found, add parent first.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- School Information -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-school me-2"></i>School Information
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="school" class="form-label">School *</label>
+                                <select class="form-select" id="school" name="school" required>
+                                    <option value="">Loading schools...</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                                <small class="text-muted">Select the school this child attends.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Contact -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-phone-alt me-2"></i>Emergency Contact
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="emergencyName" class="form-label">Contact Name</label>
+                                <input type="text" class="form-control" id="emergencyName" name="emergencyName">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="emergencyPhone" class="form-label">Contact Phone</label>
+                                <input type="tel" class="form-control" id="emergencyPhone" name="emergencyPhone">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="relationship" class="form-label">Relationship</label>
+                                <select class="form-select" id="relationship" name="relationship">
+                                    <option value="">Select Relationship</option>
+                                    <option value="Mother">Mother</option>
+                                    <option value="Father">Father</option>
+                                    <option value="Guardian">Guardian</option>
+                                    <option value="Relative">Relative</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Medical Information -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-heartbeat me-2"></i>Medical Information
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="allergies" class="form-label">Allergies</label>
+                                <input type="text" class="form-control" id="allergies" name="allergies" placeholder="e.g., Peanuts, Dust, Pollen">
+                                <small class="text-muted">Separate multiple allergies with commas</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="bloodType" class="form-label">Blood Type</label>
+                                <select class="form-select" id="bloodType" name="bloodType">
+                                    <option value="">Select Blood Type</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                    <option value="Unknown">Unknown</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="medicalConditions" class="form-label">Medical Conditions</label>
+                            <input type="text" class="form-control" id="medicalConditions" name="medicalConditions" placeholder="e.g., Asthma, Diabetes">
+                            <small class="text-muted">Separate multiple conditions with commas</small>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="doctorName" class="form-label">Doctor Name</label>
+                                <input type="text" class="form-control" id="doctorName" name="doctorName">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="doctorPhone" class="form-label">Doctor Phone</label>
+                                <input type="tel" class="form-control" id="doctorPhone" name="doctorPhone">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="clinic" class="form-label">Clinic/Hospital</label>
+                                <input type="text" class="form-control" id="clinic" name="clinic">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transportation -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-bus me-2"></i>Transportation
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="needsTransport" name="needsTransport">
+                                    <label class="form-check-label" for="needsTransport">
+                                        Needs School Transportation
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" id="transportFields" style="display: none;">
+                            <div class="col-md-6 mb-3">
+                                <label for="pickupAddress" class="form-label">Pickup Address</label>
+                                <textarea class="form-control" id="pickupAddress" name="pickupAddress" rows="2"></textarea>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="dropoffAddress" class="form-label">Drop-off Address</label>
+                                <textarea class="form-control" id="dropoffAddress" name="dropoffAddress" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="row" id="specialInstructions" style="display: none;">
+                            <div class="col-md-12 mb-3">
+                                <label for="specialInstructions" class="form-label">Special Instructions</label>
+                                <textarea class="form-control" id="specialInstructions" name="specialInstructions" rows="2" maxlength="500"></textarea>
+                                <small class="text-muted">Any special instructions for pickup/drop-off</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Child Photo -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-camera me-2"></i>Child Photo
+                        </h3>
+                        <div class="photo-upload" id="photoUpload" onclick="document.getElementById('photoInput').click()">
+                            <div id="photoPreview">
+                                <i class="fas fa-camera fa-3x mb-3"></i>
+                                <p>Click to upload child photo</p>
+                                <small>Or drag and drop image here</small>
+                                <br>
+                                <small class="text-muted">JPG, PNG, GIF (Max 5MB)</small>
+                            </div>
+                        </div>
+                        <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                    </div>
+
+                    <!-- Alert Container -->
+                    <div id="alertContainer"></div>
+
+                    <!-- Submit Button -->
+                    <div class="d-flex justify-content-between">
+                        <a href="/admin/children" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-submit" id="submitBtn">
+                            <span class="loading-spinner"></span>
+                            <span class="btn-text">
+                                <i class="fas fa-save me-2"></i>Save Child
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Form elements
+        const form = document.getElementById('addChildForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const alertContainer = document.getElementById('alertContainer');
+        const photoUpload = document.getElementById('photoUpload');
+        const photoInput = document.getElementById('photoInput');
+        const photoPreview = document.getElementById('photoPreview');
+        const needsTransportCheckbox = document.getElementById('needsTransport');
+        const transportFields = document.getElementById('transportFields');
+        const specialInstructions = document.getElementById('specialInstructions');
+
+        // Toggle sidebar for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        }
+
+        // Show alert
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alertDiv);
+        }
+
+        // Set loading state
+        function setLoading(loading) {
+            submitBtn.disabled = loading;
+            submitBtn.classList.toggle('loading', loading);
+        }
+
+        // Load parents and schools
+        async function loadParentsAndSchools() {
+            try {
+                // Load parents
+                const parentsResponse = await fetch('/admin/parents/api');
+                const parentsResult = await parentsResponse.json();
+                
+                if (parentsResult.success) {
+                    const parentSelect = document.getElementById('parent');
+                    parentSelect.innerHTML = '<option value="">Select Parent</option>';
+                    
+                    parentsResult.data.parents.forEach(parent => {
+                        const option = document.createElement('option');
+                        option.value = parent._id;
+                        option.textContent = `${parent.fullName} - ${parent.email}`;
+                        parentSelect.appendChild(option);
+                    });
+                }
+
+                // Load schools
+                const schoolsResponse = await fetch('/admin/schools/api');
+                const schoolsResult = await schoolsResponse.json();
+                
+                if (schoolsResult.success) {
+                    const schoolSelect = document.getElementById('school');
+                    schoolSelect.innerHTML = '<option value="">Select School</option>';
+                    
+                    schoolsResult.data.schools.forEach(school => {
+                        const option = document.createElement('option');
+                        option.value = school._id;
+                        option.textContent = `${school.name} - ${school.type}`;
+                        schoolSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading parents and schools:', error);
+            }
+        }
+
+        // Handle transportation checkbox
+        needsTransportCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            transportFields.style.display = isChecked ? 'block' : 'none';
+            specialInstructions.style.display = isChecked ? 'block' : 'none';
+        });
+
+        // Validate form
+        function validateForm() {
+            let isValid = true;
+            const requiredFields = form.querySelectorAll('[required]');
+            
+            requiredFields.forEach(field => {
+                const value = field.value.trim();
+                const feedback = field.nextElementSibling;
+                
+                if (!value) {
+                    field.classList.add('is-invalid');
+                    if (feedback && feedback.classList.contains('invalid-feedback')) {
+                        feedback.textContent = 'This field is required';
+                    }
+                    isValid = false;
+                } else {
+                    field.classList.remove('is-invalid');
+                    if (feedback && feedback.classList.contains('invalid-feedback')) {
+                        feedback.textContent = '';
+                    }
+                    
+                    // Date validation - ensure child is between 0 and 18 years old
+                    if (field.type === 'date' && field.id === 'dateOfBirth') {
+                        const birthDate = new Date(value);
+                        const today = new Date();
+                        const age = today.getFullYear() - birthDate.getFullYear();
+                        const monthDiff = today.getMonth() - birthDate.getMonth();
+                        
+                        let actualAge = age;
+                        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                            actualAge--;
+                        }
+                        
+                        if (actualAge < 0 || actualAge > 18) {
+                            field.classList.add('is-invalid');
+                            if (feedback && feedback.classList.contains('invalid-feedback')) {
+                                feedback.textContent = 'Child age must be between 0 and 18 years';
+                            }
+                            isValid = false;
+                        }
+                    }
+                    
+                    // Phone validation
+                    if (field.type === 'tel' && value) {
+                        const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
+                        if (!phoneRegex.test(value)) {
+                            field.classList.add('is-invalid');
+                            if (feedback && feedback.classList.contains('invalid-feedback')) {
+                                feedback.textContent = 'Please enter a valid phone number';
+                            }
+                            isValid = false;
+                        }
+                    }
+                }
+            });
+            
+            return isValid;
+        }
+
+        // Handle photo upload
+        photoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) {
+                    showAlert('Photo size must be less than 5MB', 'warning');
+                    return;
+                }
+                
+                if (!file.type.startsWith('image/')) {
+                    showAlert('Please select an image file', 'warning');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    photoPreview.innerHTML = `
+                        <img src="${e.target.result}" alt="Child photo" class="photo-preview">
+                        <p>Click to change photo</p>
+                        <small class="text-muted">${file.name}</small>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Drag and drop
+        photoUpload.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+
+        photoUpload.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+        });
+
+        photoUpload.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                photoInput.files = files;
+                const event = new Event('change', { bubbles: true });
+                photoInput.dispatchEvent(event);
+            }
+        });
+
+        // Handle form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                showAlert('Please fix the errors in the form', 'danger');
+                return;
+            }
+            
+            setLoading(true);
+            alertContainer.innerHTML = '';
+            
+            // Collect form data
+            const formData = {
+                firstName: document.getElementById('firstName').value.trim(),
+                lastName: document.getElementById('lastName').value.trim(),
+                dateOfBirth: document.getElementById('dateOfBirth').value,
+                grade: document.getElementById('grade').value,
+                gender: document.getElementById('gender').value,
+                parent: document.getElementById('parent').value,
+                school: document.getElementById('school').value,
+                emergencyContact: {
+                    name: document.getElementById('emergencyName').value.trim(),
+                    phone: document.getElementById('emergencyPhone').value.trim(),
+                    relationship: document.getElementById('relationship').value
+                },
+                medicalInfo: {
+                    allergies: document.getElementById('allergies').value.split(',').map(a => a.trim()).filter(a => a),
+                    bloodType: document.getElementById('bloodType').value,
+                    medicalConditions: document.getElementById('medicalConditions').value.split(',').map(c => c.trim()).filter(c => c),
+                    doctor: {
+                        name: document.getElementById('doctorName').value.trim(),
+                        phone: document.getElementById('doctorPhone').value.trim(),
+                        clinic: document.getElementById('clinic').value.trim()
+                    }
+                },
+                transportation: {
+                    needsTransport: document.getElementById('needsTransport').checked,
+                    pickupAddress: document.getElementById('pickupAddress').value.trim(),
+                    dropoffAddress: document.getElementById('dropoffAddress').value.trim(),
+                    specialInstructions: document.getElementById('specialInstructions').value.trim()
+                }
+            };
+            
+            // Handle photo (in a real app, you'd upload to cloud storage)
+            const photoFile = photoInput.files[0];
+            if (photoFile) {
+                // For demo purposes, we'll use a data URL
+                // In production, upload to cloud storage and save the URL
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    formData.photo = e.target.result;
+                    submitChild(formData);
+                };
+                reader.readAsDataURL(photoFile);
+            } else {
+                submitChild(formData);
+            }
+        });
+
+        // Submit child data
+        async function submitChild(formData) {
+            try {
+                const response = await fetch('/admin/children/api', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('Child created successfully! Redirecting...', 'success');
+                    
+                    // Redirect to children list after a short delay
+                    setTimeout(() => {
+                        window.location.href = '/admin/children';
+                    }, 2000);
+                } else {
+                    if (result.errors && Array.isArray(result.errors)) {
+                        showAlert(result.errors.join(', '), 'danger');
+                    } else {
+                        showAlert(result.message || 'Error creating child', 'danger');
+                    }
+                }
+            } catch (error) {
+                console.error('Create child error:', error);
+                showAlert('Network error. Please try again.', 'danger');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Clear validation on input
+        form.addEventListener('input', function(e) {
+            if (e.target.classList.contains('is-invalid')) {
+                e.target.classList.remove('is-invalid');
+                const feedback = e.target.nextElementSibling;
+                if (feedback && feedback.classList.contains('invalid-feedback')) {
+                    feedback.textContent = '';
+                }
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadParentsAndSchools();
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.mobile-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !toggle.contains(event.target) &&
+                sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

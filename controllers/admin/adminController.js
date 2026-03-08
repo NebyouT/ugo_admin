@@ -1,4 +1,5 @@
 const User = require('../../models/User');
+const jwt = require('jsonwebtoken');
 
 // @desc    Admin login
 // @route   POST /api/admin/login
@@ -12,14 +13,6 @@ const adminLogin = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Please provide email and password'
-      });
-    }
-
-    // Check if it's admin email
-    if (email !== process.env.ADMIN_EMAIL) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
       });
     }
 
@@ -40,11 +33,17 @@ const adminLogin = async (req, res) => {
 
         return res.json({
           success: true,
-          message: 'Login successful',
+          message: 'Login successful (database)',
           data: {
             user: user.getPublicProfile(),
             token
           }
+        });
+      } else {
+        // Database admin found but password does not match
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials'
         });
       }
     } catch (dbError) {

@@ -28,9 +28,41 @@ const connectDB = async () => {
       useUnifiedTopology: true,
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
+    
+    // Create admin user if it doesn't exist
+    await createAdminUser();
+    
   } catch (error) {
     console.error('MongoDB connection error:', error.message);
     console.log('Continuing without MongoDB connection...');
+  }
+};
+
+// Create admin user function
+const createAdminUser = async () => {
+  try {
+    const User = require('./models/User');
+    
+    // Check if admin user already exists
+    const existingAdmin = await User.findOne({ email: process.env.ADMIN_EMAIL, role: 'admin' });
+    
+    if (!existingAdmin) {
+      // Create admin user
+      const adminData = {
+        email: process.env.ADMIN_EMAIL,
+        password: process.env.ADMIN_PASSWORD,
+        firstName: process.env.ADMIN_FIRST_NAME,
+        lastName: process.env.ADMIN_LAST_NAME,
+        role: 'admin'
+      };
+      
+      const admin = await User.create(adminData);
+      console.log('Admin user created successfully:', admin.email);
+    } else {
+      console.log('Admin user already exists:', existingAdmin.email);
+    }
+  } catch (error) {
+    console.error('Error creating admin user:', error.message);
   }
 };
 
@@ -45,6 +77,22 @@ app.get('/', (req, res) => {
 // Admin routes
 const adminRoutes = require('./routes/admin');
 app.use('/admin', adminRoutes);
+
+// Parent routes
+const parentRoutes = require('./routes/parents');
+app.use('/admin/parents', parentRoutes);
+
+// School routes
+const schoolRoutes = require('./routes/schools');
+app.use('/admin/schools', schoolRoutes);
+
+// Children routes
+const childRoutes = require('./routes/children');
+app.use('/admin/children', childRoutes);
+
+// Integration routes
+const integrationRoutes = require('./routes/integrations');
+app.use('/admin/integrations', integrationRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

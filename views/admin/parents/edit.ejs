@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(135deg, var(--dark-color) 0%, #2c3e50 100%);
+            color: white;
+            z-index: 1000;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-logo {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .sidebar-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .menu-section {
+            margin-bottom: 30px;
+        }
+
+        .menu-title {
+            padding: 0 20px;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            opacity: 0.5;
+            font-weight: 600;
+        }
+
+        .menu-item {
+            display: block;
+            padding: 15px 20px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .menu-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: var(--primary-color);
+        }
+
+        .menu-item.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-left-color: var(--primary-color);
+        }
+
+        .menu-item i {
+            width: 25px;
+            margin-right: 10px;
+        }
+
+        /* Header Styles */
+        .top-header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        .content-area {
+            padding: 30px;
+        }
+
+        /* Form Styles */
+        .form-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--dark-color);
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        }
+
+        .form-control.is-invalid {
+            border-color: var(--danger-color);
+        }
+
+        .invalid-feedback {
+            display: block;
+            color: var(--danger-color);
+            font-size: 0.875rem;
+            margin-top: 5px;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,123,255,0.3);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .btn-submit.loading .loading-spinner {
+            display: inline-block;
+        }
+
+        .btn-submit.loading .btn-text {
+            display: none;
+        }
+
+        /* Mobile Toggle */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .mobile-toggle {
+                display: block;
+            }
+
+            .content-area {
+                padding: 20px;
+            }
+
+            .form-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-bus"></i>
+            </div>
+            <div class="sidebar-title">UGO Admin</div>
+            <div class="sidebar-subtitle">Transport Management</div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-title">Main</div>
+                <a href="/admin/dashboard" class="menu-item">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+                <a href="/admin/parents" class="menu-item active">
+                    <i class="fas fa-users"></i>
+                    Parents
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">System</div>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+                <a href="/admin/logout" class="menu-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-header">
+            <h1 class="page-title">Edit Parent</h1>
+            <div class="header-actions">
+                <a href="/admin/parents" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Parents
+                </a>
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-2"></i><%= user ? user.firstName : 'Admin' %>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/admin/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="form-container">
+                <!-- Loading State -->
+                <div id="loadingState" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading parent information...</p>
+                </div>
+
+                <!-- Edit Form (will be populated by JavaScript) -->
+                <form id="editParentForm" style="display: none;">
+                    <!-- Basic Information -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-user me-2"></i>Basic Information
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="firstName" class="form-label">First Name *</label>
+                                <input type="text" class="form-control" id="firstName" name="firstName" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="lastName" class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" id="lastName" name="lastName" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Phone Number *</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="occupation" class="form-label">Occupation</label>
+                                <input type="text" class="form-control" id="occupation" name="occupation">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="workplace" class="form-label">Workplace</label>
+                                <input type="text" class="form-control" id="workplace" name="workplace">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address Information -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-map-marker-alt me-2"></i>Address Information
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="street" class="form-label">Street Address *</label>
+                                <input type="text" class="form-control" id="street" name="street" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="houseNumber" class="form-label">House Number</label>
+                                <input type="text" class="form-control" id="houseNumber" name="houseNumber">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="city" class="form-label">City *</label>
+                                <input type="text" class="form-control" id="city" name="city" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="subCity" class="form-label">Sub-City *</label>
+                                <input type="text" class="form-control" id="subCity" name="subCity" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="woreda" class="form-label">Woreda *</label>
+                                <input type="text" class="form-control" id="woreda" name="woreda" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Contact -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-phone-alt me-2"></i>Emergency Contact
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="emergencyName" class="form-label">Contact Name *</label>
+                                <input type="text" class="form-control" id="emergencyName" name="emergencyName" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="emergencyPhone" class="form-label">Contact Phone *</label>
+                                <input type="tel" class="form-control" id="emergencyPhone" name="emergencyPhone" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="relationship" class="form-label">Relationship *</label>
+                                <select class="form-select" id="relationship" name="relationship" required>
+                                    <option value="">Select Relationship</option>
+                                    <option value="Spouse">Spouse</option>
+                                    <option value="Sibling">Sibling</option>
+                                    <option value="Parent">Parent</option>
+                                    <option value="Relative">Relative</option>
+                                    <option value="Friend">Friend</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Identification -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-id-card me-2"></i>Identification
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="idType" class="form-label">ID Type *</label>
+                                <select class="form-select" id="idType" name="idType" required>
+                                    <option value="">Select ID Type</option>
+                                    <option value="National ID">National ID</option>
+                                    <option value="Passport">Passport</option>
+                                    <option value="Driver License">Driver License</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="idNumber" class="form-label">ID Number *</label>
+                                <input type="text" class="form-control" id="idNumber" name="idNumber" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-toggle-on me-2"></i>Status
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="isActive" name="isActive">
+                                    <label class="form-check-label" for="isActive">
+                                        Active Parent
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alert Container -->
+                    <div id="alertContainer"></div>
+
+                    <!-- Submit Button -->
+                    <div class="d-flex justify-content-between">
+                        <a href="/admin/parents" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-submit" id="submitBtn">
+                            <span class="loading-spinner"></span>
+                            <span class="btn-text">
+                                <i class="fas fa-save me-2"></i>Update Parent
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Get parent ID from URL
+        const parentId = '<%= parentId %>';
+        let originalData = null;
+
+        // Form elements
+        const form = document.getElementById('editParentForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const alertContainer = document.getElementById('alertContainer');
+        const loadingState = document.getElementById('loadingState');
+
+        // Toggle sidebar for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        }
+
+        // Load parent data
+        async function loadParentData() {
+            try {
+                const response = await fetch(`/admin/parents/api/${parentId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    originalData = result.data;
+                    populateForm(originalData);
+                    
+                    // Hide loading, show form
+                    loadingState.style.display = 'none';
+                    form.style.display = 'block';
+                } else {
+                    showError('Parent not found');
+                }
+            } catch (error) {
+                console.error('Error loading parent data:', error);
+                showError('Error loading parent data');
+            }
+        }
+
+        // Populate form with parent data
+        function populateForm(parent) {
+            // Basic information
+            document.getElementById('firstName').value = parent.firstName;
+            document.getElementById('lastName').value = parent.lastName;
+            document.getElementById('email').value = parent.email;
+            document.getElementById('phone').value = parent.phone;
+            document.getElementById('occupation').value = parent.occupation || '';
+            document.getElementById('workplace').value = parent.workplace || '';
+
+            // Address information
+            document.getElementById('street').value = parent.address.street;
+            document.getElementById('houseNumber').value = parent.address.houseNumber || '';
+            document.getElementById('city').value = parent.address.city;
+            document.getElementById('subCity').value = parent.address.subCity;
+            document.getElementById('woreda').value = parent.address.woreda;
+
+            // Emergency contact
+            document.getElementById('emergencyName').value = parent.emergencyContact.name;
+            document.getElementById('emergencyPhone').value = parent.emergencyContact.phone;
+            document.getElementById('relationship').value = parent.emergencyContact.relationship;
+
+            // Identification
+            document.getElementById('idType').value = parent.idType;
+            document.getElementById('idNumber').value = parent.idNumber;
+
+            // Status
+            document.getElementById('isActive').checked = parent.isActive;
+        }
+
+        // Show alert
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alertDiv);
+        }
+
+        // Show error
+        function showError(message) {
+            loadingState.innerHTML = `
+                <div class="text-center text-danger">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                    <h4>Error</h4>
+                    <p>${message}</p>
+                    <a href="/admin/parents" class="btn btn-primary">Back to Parents</a>
+                </div>
+            `;
+        }
+
+        // Set loading state
+        function setLoading(loading) {
+            submitBtn.disabled = loading;
+            submitBtn.classList.toggle('loading', loading);
+        }
+
+        // Validate form
+        function validateForm() {
+            let isValid = true;
+            const requiredFields = form.querySelectorAll('[required]');
+            
+            requiredFields.forEach(field => {
+                const value = field.value.trim();
+                const feedback = field.nextElementSibling;
+                
+                if (!value) {
+                    field.classList.add('is-invalid');
+                    if (feedback && feedback.classList.contains('invalid-feedback')) {
+                        feedback.textContent = 'This field is required';
+                    }
+                    isValid = false;
+                } else {
+                    field.classList.remove('is-invalid');
+                    if (feedback && feedback.classList.contains('invalid-feedback')) {
+                        feedback.textContent = '';
+                    }
+                    
+                    // Email validation
+                    if (field.type === 'email') {
+                        const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+                        if (!emailRegex.test(value)) {
+                            field.classList.add('is-invalid');
+                            if (feedback && feedback.classList.contains('invalid-feedback')) {
+                                feedback.textContent = 'Please enter a valid email address';
+                            }
+                            isValid = false;
+                        }
+                    }
+                    
+                    // Phone validation
+                    if (field.type === 'tel' || field.name === 'phone' || field.name === 'emergencyPhone') {
+                        const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
+                        if (!phoneRegex.test(value)) {
+                            field.classList.add('is-invalid');
+                            if (feedback && feedback.classList.contains('invalid-feedback')) {
+                                feedback.textContent = 'Please enter a valid phone number';
+                            }
+                            isValid = false;
+                        }
+                    }
+                }
+            });
+            
+            return isValid;
+        }
+
+        // Handle form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                showAlert('Please fix the errors in the form', 'danger');
+                return;
+            }
+            
+            setLoading(true);
+            alertContainer.innerHTML = '';
+            
+            // Collect form data
+            const formData = {
+                firstName: document.getElementById('firstName').value.trim(),
+                lastName: document.getElementById('lastName').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                occupation: document.getElementById('occupation').value.trim(),
+                workplace: document.getElementById('workplace').value.trim(),
+                address: {
+                    street: document.getElementById('street').value.trim(),
+                    houseNumber: document.getElementById('houseNumber').value.trim(),
+                    city: document.getElementById('city').value.trim(),
+                    subCity: document.getElementById('subCity').value.trim(),
+                    woreda: document.getElementById('woreda').value.trim()
+                },
+                emergencyContact: {
+                    name: document.getElementById('emergencyName').value.trim(),
+                    phone: document.getElementById('emergencyPhone').value.trim(),
+                    relationship: document.getElementById('relationship').value
+                },
+                idType: document.getElementById('idType').value,
+                idNumber: document.getElementById('idNumber').value.trim(),
+                isActive: document.getElementById('isActive').checked
+            };
+            
+            try {
+                const response = await fetch(`/admin/parents/api/${parentId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('Parent updated successfully! Redirecting...', 'success');
+                    
+                    // Redirect to parent details after a short delay
+                    setTimeout(() => {
+                        window.location.href = `/admin/parents/${parentId}`;
+                    }, 2000);
+                } else {
+                    if (result.errors && Array.isArray(result.errors)) {
+                        showAlert(result.errors.join(', '), 'danger');
+                    } else {
+                        showAlert(result.message || 'Error updating parent', 'danger');
+                    }
+                }
+            } catch (error) {
+                console.error('Update parent error:', error);
+                showAlert('Network error. Please try again.', 'danger');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // Clear validation on input
+        form.addEventListener('input', function(e) {
+            if (e.target.classList.contains('is-invalid')) {
+                e.target.classList.remove('is-invalid');
+                const feedback = e.target.nextElementSibling;
+                if (feedback && feedback.classList.contains('invalid-feedback')) {
+                    feedback.textContent = '';
+                }
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadParentData();
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.mobile-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !toggle.contains(event.target) &&
+                sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(135deg, var(--dark-color) 0%, #2c3e50 100%);
+            color: white;
+            z-index: 1000;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-logo {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .sidebar-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .menu-section {
+            margin-bottom: 30px;
+        }
+
+        .menu-title {
+            padding: 0 20px;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            opacity: 0.5;
+            font-weight: 600;
+        }
+
+        .menu-item {
+            display: block;
+            padding: 15px 20px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .menu-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: var(--primary-color);
+        }
+
+        .menu-item.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-left-color: var(--primary-color);
+        }
+
+        .menu-item i {
+            width: 25px;
+            margin-right: 10px;
+        }
+
+        /* Header Styles */
+        .top-header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        .content-area {
+            padding: 30px;
+        }
+
+        /* Form Styles */
+        .form-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--dark-color);
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        }
+
+        .form-control.is-invalid {
+            border-color: var(--danger-color);
+        }
+
+        .invalid-feedback {
+            display: block;
+            color: var(--danger-color);
+            font-size: 0.875rem;
+            margin-top: 5px;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,123,255,0.3);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .btn-submit.loading .loading-spinner {
+            display: inline-block;
+        }
+
+        .btn-submit.loading .btn-text {
+            display: none;
+        }
+
+        /* Child Form Styles */
+        .child-form {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .child-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .child-title {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin: 0;
+        }
+
+        .remove-child {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .remove-child:hover {
+            background: #c82333;
+        }
+
+        .school-select {
+            position: relative;
+        }
+
+        .school-loading {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+        }
+
+        /* Mobile Toggle */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .mobile-toggle {
+                display: block;
+            }
+
+            .content-area {
+                padding: 20px;
+            }
+
+            .form-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-bus"></i>
+            </div>
+            <div class="sidebar-title">UGO Admin</div>
+            <div class="sidebar-subtitle">Transport Management</div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-title">Main</div>
+                <a href="/admin/dashboard" class="menu-item">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+                <a href="/admin/parents" class="menu-item active">
+                    <i class="fas fa-users"></i>
+                    Parents
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">System</div>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+                <a href="/admin/logout" class="menu-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-header">
+            <h1 class="page-title">Add New Parent</h1>
+            <div class="header-actions">
+                <a href="/admin/parents" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Parents
+                </a>
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-2"></i><%= user ? user.firstName : 'Admin' %>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/admin/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="form-container">
+                <form id="addParentForm">
+                    <!-- Basic Information -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-user me-2"></i>Basic Information
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="firstName" class="form-label">First Name *</label>
+                                <input type="text" class="form-control" id="firstName" name="firstName" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="lastName" class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" id="lastName" name="lastName" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Phone Number *</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="occupation" class="form-label">Occupation</label>
+                                <input type="text" class="form-control" id="occupation" name="occupation">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="workplace" class="form-label">Workplace</label>
+                                <input type="text" class="form-control" id="workplace" name="workplace">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address Information -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-map-marker-alt me-2"></i>Address Information
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="street" class="form-label">Street Address *</label>
+                                <input type="text" class="form-control" id="street" name="street" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="houseNumber" class="form-label">House Number</label>
+                                <input type="text" class="form-control" id="houseNumber" name="houseNumber">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="city" class="form-label">City *</label>
+                                <input type="text" class="form-control" id="city" name="city" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="subCity" class="form-label">Sub-City *</label>
+                                <input type="text" class="form-control" id="subCity" name="subCity" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="woreda" class="form-label">Woreda *</label>
+                                <input type="text" class="form-control" id="woreda" name="woreda" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Contact -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-phone-alt me-2"></i>Emergency Contact
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="emergencyName" class="form-label">Contact Name *</label>
+                                <input type="text" class="form-control" id="emergencyName" name="emergencyName" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="emergencyPhone" class="form-label">Contact Phone *</label>
+                                <input type="tel" class="form-control" id="emergencyPhone" name="emergencyPhone" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="relationship" class="form-label">Relationship *</label>
+                                <select class="form-select" id="relationship" name="relationship" required>
+                                    <option value="">Select Relationship</option>
+                                    <option value="Spouse">Spouse</option>
+                                    <option value="Sibling">Sibling</option>
+                                    <option value="Parent">Parent</option>
+                                    <option value="Relative">Relative</option>
+                                    <option value="Friend">Friend</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Identification -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-id-card me-2"></i>Identification
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="idType" class="form-label">ID Type *</label>
+                                <select class="form-select" id="idType" name="idType" required>
+                                    <option value="">Select ID Type</option>
+                                    <option value="National ID">National ID</option>
+                                    <option value="Passport">Passport</option>
+                                    <option value="Driver License">Driver License</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="idNumber" class="form-label">ID Number *</label>
+                                <input type="text" class="form-control" id="idNumber" name="idNumber" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Children Section -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-child me-2"></i>Children Information
+                            <small class="text-muted ms-2">(Optional - Add children now or later)</small>
+                        </h3>
+                        
+                        <div id="childrenContainer">
+                            <div class="children-list" id="childrenList">
+                                <!-- Children will be added here dynamically -->
+                            </div>
+                            
+                            <button type="button" class="btn btn-outline-primary mt-3" onclick="addChildForm()">
+                                <i class="fas fa-plus me-2"></i>Add Child
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Alert Container -->
+                    <div id="alertContainer"></div>
+
+                    <!-- Submit Button -->
+                    <div class="d-flex justify-content-between">
+                        <a href="/admin/parents" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-submit" id="submitBtn">
+                            <span class="loading-spinner"></span>
+                            <span class="btn-text">
+                                <i class="fas fa-save me-2"></i>Save Parent
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Form elements
+        const form = document.getElementById('addParentForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const alertContainer = document.getElementById('alertContainer');
+
+        // Show alert function
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alertDiv);
+        }
+
+        // Set loading state
+        function setLoading(loading) {
+            submitBtn.disabled = loading;
+            submitBtn.classList.toggle('loading', loading);
+        }
+
+        // Validate form
+        function validateForm() {
+            let isValid = true;
+            const requiredFields = form.querySelectorAll('[required]');
+            
+            requiredFields.forEach(field => {
+                const value = field.value.trim();
+                const feedback = field.nextElementSibling;
+                
+                if (!value) {
+                    field.classList.add('is-invalid');
+                    if (feedback && feedback.classList.contains('invalid-feedback')) {
+                        feedback.textContent = 'This field is required';
+                    }
+                    isValid = false;
+                } else {
+                    field.classList.remove('is-invalid');
+                    if (feedback && feedback.classList.contains('invalid-feedback')) {
+                        feedback.textContent = '';
+                    }
+                    
+                    // Email validation
+                    if (field.type === 'email') {
+                        const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+                        if (!emailRegex.test(value)) {
+                            field.classList.add('is-invalid');
+                            if (feedback && feedback.classList.contains('invalid-feedback')) {
+                                feedback.textContent = 'Please enter a valid email address';
+                            }
+                            isValid = false;
+                        }
+                    }
+                    
+                    // Phone validation
+                    if (field.type === 'tel' || field.name === 'phone' || field.name === 'emergencyPhone') {
+                        const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
+                        if (!phoneRegex.test(value)) {
+                            field.classList.add('is-invalid');
+                            if (feedback && feedback.classList.contains('invalid-feedback')) {
+                                feedback.textContent = 'Please enter a valid phone number';
+                            }
+                            isValid = false;
+                        }
+                    }
+                }
+            });
+            
+            return isValid;
+        }
+
+        // Handle form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                showAlert('Please fix the errors in the form', 'danger');
+                return;
+            }
+            
+            setLoading(true);
+            alertContainer.innerHTML = '';
+            
+            // Collect form data
+            const formData = {
+                firstName: document.getElementById('firstName').value.trim(),
+                lastName: document.getElementById('lastName').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                occupation: document.getElementById('occupation').value.trim(),
+                workplace: document.getElementById('workplace').value.trim(),
+                address: {
+                    street: document.getElementById('street').value.trim(),
+                    houseNumber: document.getElementById('houseNumber').value.trim(),
+                    city: document.getElementById('city').value.trim(),
+                    subCity: document.getElementById('subCity').value.trim(),
+                    woreda: document.getElementById('woreda').value.trim()
+                },
+                emergencyContact: {
+                    name: document.getElementById('emergencyName').value.trim(),
+                    phone: document.getElementById('emergencyPhone').value.trim(),
+                    relationship: document.getElementById('relationship').value
+                },
+                idType: document.getElementById('idType').value,
+                idNumber: document.getElementById('idNumber').value.trim()
+            };
+            
+            // Collect children data
+            const children = [];
+            const childForms = document.querySelectorAll('.child-form');
+            
+            childForms.forEach((form, index) => {
+                const childData = {
+                    firstName: form.querySelector(`input[name="children[${index}][firstName]"]`)?.value.trim(),
+                    lastName: form.querySelector(`input[name="children[${index}][lastName]"]`)?.value.trim(),
+                    dateOfBirth: form.querySelector(`input[name="children[${index}][dateOfBirth]"]`)?.value,
+                    grade: form.querySelector(`select[name="children[${index}][grade]"]`)?.value,
+                    gender: form.querySelector(`select[name="children[${index}][gender]"]`)?.value,
+                    school: form.querySelector(`select[name="children[${index}][school]"]`)?.value
+                };
+                
+                // Only add child if all required fields are filled
+                if (childData.firstName && childData.lastName && childData.dateOfBirth && 
+                    childData.grade && childData.gender && childData.school) {
+                    children.push(childData);
+                }
+            });
+            
+            if (children.length > 0) {
+                formData.children = children;
+            }
+            
+            try {
+                const response = await fetch('/admin/parents/api', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(result.message || 'Parent created successfully!', 'success');
+                    
+                    // Redirect to parents list after a short delay
+                    setTimeout(() => {
+                        window.location.href = '/admin/parents';
+                    }, 2000);
+                } else {
+                    if (result.errors && Array.isArray(result.errors)) {
+                        showAlert(result.errors.join(', '), 'danger');
+                    } else {
+                        showAlert(result.message || 'Error creating parent', 'danger');
+                    }
+                }
+            } catch (error) {
+                console.error('Create parent error:', error);
+                showAlert('Network error. Please try again.', 'danger');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // Global variables
+        let childCounter = 0;
+        let schools = [];
+
+        // Load schools for dropdown
+        async function loadSchools() {
+            try {
+                const response = await fetch('/admin/schools/api');
+                const result = await response.json();
+                
+                if (result.success) {
+                    schools = result.data.schools;
+                    updateSchoolDropdowns();
+                }
+            } catch (error) {
+                console.error('Error loading schools:', error);
+            }
+        }
+
+        // Update all school dropdowns
+        function updateSchoolDropdowns() {
+            const schoolSelects = document.querySelectorAll('.school-select select');
+            schoolSelects.forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Select School</option>';
+                
+                schools.forEach(school => {
+                    const option = document.createElement('option');
+                    option.value = school._id;
+                    option.textContent = `${school.name} - ${school.type}`;
+                    if (currentValue === school._id) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        // Add child form
+        function addChildForm() {
+            childCounter++;
+            const childIndex = childCounter - 1;
+            
+            const childForm = document.createElement('div');
+            childForm.className = 'child-form';
+            childForm.id = `child-${childIndex}`;
+            
+            childForm.innerHTML = `
+                <div class="child-header">
+                    <h5 class="child-title">Child ${childCounter}</h5>
+                    <button type="button" class="remove-child" onclick="removeChildForm('child-${childIndex}')">
+                        <i class="fas fa-times"></i> Remove
+                    </button>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">First Name *</label>
+                        <input type="text" class="form-control" name="children[${childIndex}][firstName]" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Last Name *</label>
+                        <input type="text" class="form-control" name="children[${childIndex}][lastName]" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Date of Birth *</label>
+                        <input type="date" class="form-control" name="children[${childIndex}][dateOfBirth]" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Grade *</label>
+                        <select class="form-select" name="children[${childIndex}][grade]" required>
+                            <option value="">Select Grade</option>
+                            <option value="Kindergarten 1">Kindergarten 1</option>
+                            <option value="Kindergarten 2">Kindergarten 2</option>
+                            <option value="Kindergarten 3">Kindergarten 3</option>
+                            <option value="Grade 1">Grade 1</option>
+                            <option value="Grade 2">Grade 2</option>
+                            <option value="Grade 3">Grade 3</option>
+                            <option value="Grade 4">Grade 4</option>
+                            <option value="Grade 5">Grade 5</option>
+                            <option value="Grade 6">Grade 6</option>
+                            <option value="Grade 7">Grade 7</option>
+                            <option value="Grade 8">Grade 8</option>
+                            <option value="Grade 9">Grade 9</option>
+                            <option value="Grade 10">Grade 10</option>
+                            <option value="Grade 11">Grade 11</option>
+                            <option value="Grade 12">Grade 12</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Gender *</label>
+                        <select class="form-select" name="children[${childIndex}][gender]" required>
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">School *</label>
+                        <div class="school-select">
+                            <select class="form-select" name="children[${childIndex}][school]" required>
+                                <option value="">Loading schools...</option>
+                            </select>
+                            <div class="school-loading">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('childrenList').appendChild(childForm);
+            
+            // Update school dropdown for this new child
+            updateSchoolDropdowns();
+        }
+
+        // Remove child form
+        function removeChildForm(childId) {
+            const childForm = document.getElementById(childId);
+            if (childForm) {
+                childForm.remove();
+                // Update child numbers
+                updateChildNumbers();
+            }
+        }
+
+        // Update child numbers after removal
+        function updateChildNumbers() {
+            const childForms = document.querySelectorAll('.child-form');
+            childCounter = childForms.length;
+            
+            childForms.forEach((form, index) => {
+                const title = form.querySelector('.child-title');
+                if (title) {
+                    title.textContent = `Child ${index + 1}`;
+                }
+            });
+        }
+
+        // Toggle sidebar for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        }
+
+        // Clear validation on input
+        form.addEventListener('input', function(e) {
+            if (e.target.classList.contains('is-invalid')) {
+                e.target.classList.remove('is-invalid');
+                const feedback = e.target.nextElementSibling;
+                if (feedback && feedback.classList.contains('invalid-feedback')) {
+                    feedback.textContent = '';
+                }
+            }
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.mobile-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !toggle.contains(event.target) &&
+                sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSchools();
+        });
+    </script>
+</body>
+</html>

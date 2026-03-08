@@ -317,13 +317,7 @@
             <div class="sidebar-subtitle">Transport Management</div>
         </div>
 
-        <div class="user-profile">
-            <div class="user-avatar">
-                <i class="fas fa-user"></i>
-            </div>
-            <div class="user-name"><%= user ? user.fullName : 'Admin User' %></div>
-            <div class="user-role">System Administrator</div>
-        </div>
+   
 
         <nav class="sidebar-menu">
             <div class="menu-section">
@@ -331,6 +325,10 @@
                 <a href="/admin/dashboard" class="menu-item active">
                     <i class="fas fa-tachometer-alt"></i>
                     Dashboard
+                </a>
+                <a href="/admin/parents" class="menu-item">
+                    <i class="fas fa-users"></i>
+                    Parents
                 </a>
             </div>
 
@@ -458,7 +456,7 @@
         // Load dashboard statistics
         async function loadDashboardStats() {
             try {
-                const response = await fetch('/api/admin/dashboard/stats');
+                const response = await fetch('/admin/dashboard/stats');
                 const result = await response.json();
                 
                 if (result.success) {

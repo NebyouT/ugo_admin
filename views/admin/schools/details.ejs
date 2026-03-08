@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(135deg, var(--dark-color) 0%, #2c3e50 100%);
+            color: white;
+            z-index: 1000;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-logo {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .sidebar-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .menu-section {
+            margin-bottom: 30px;
+        }
+
+        .menu-title {
+            padding: 0 20px;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            opacity: 0.5;
+            font-weight: 600;
+        }
+
+        .menu-item {
+            display: block;
+            padding: 15px 20px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .menu-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: var(--primary-color);
+        }
+
+        .menu-item.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-left-color: var(--primary-color);
+        }
+
+        .menu-item i {
+            width: 25px;
+            margin-right: 10px;
+        }
+
+        /* Header Styles */
+        .top-header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        .content-area {
+            padding: 30px;
+        }
+
+        /* Card Styles */
+        .detail-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .detail-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .detail-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .detail-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .detail-title i {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+
+        .detail-item {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .detail-label {
+            font-weight: 500;
+            color: var(--secondary-color);
+            min-width: 150px;
+        }
+
+        .detail-value {
+            color: var(--dark-color);
+            flex: 1;
+        }
+
+        .school-photo {
+            width: 150px;
+            height: 150px;
+            border-radius: 15px;
+            object-fit: cover;
+            margin-bottom: 20px;
+            background: var(--light-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary-color);
+            font-size: 3rem;
+        }
+
+        .status-badge {
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: rgba(40,167,69,0.1);
+            color: var(--success-color);
+        }
+
+        .status-inactive {
+            background: rgba(220,53,69,0.1);
+            color: var(--danger-color);
+        }
+
+        .map-container {
+            height: 300px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary-color);
+        }
+
+        .children-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .child-card {
+            background: var(--light-color);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .child-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--info-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .child-info h6 {
+            margin: 0;
+            color: var(--dark-color);
+        }
+
+        .child-info small {
+            color: var(--secondary-color);
+        }
+
+        /* Mobile Toggle */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .mobile-toggle {
+                display: block;
+            }
+
+            .content-area {
+                padding: 20px;
+            }
+
+            .detail-card {
+                padding: 20px;
+            }
+
+            .detail-item {
+                flex-direction: column;
+            }
+
+            .detail-label {
+                min-width: auto;
+                margin-bottom: 5px;
+            }
+
+            .children-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-bus"></i>
+            </div>
+            <div class="sidebar-title">UGO Admin</div>
+            <div class="sidebar-subtitle">Transport Management</div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-title">Main</div>
+                <a href="/admin/dashboard" class="menu-item">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+                <a href="/admin/parents" class="menu-item">
+                    <i class="fas fa-users"></i>
+                    Parents
+                </a>
+                <a href="/admin/children" class="menu-item">
+                    <i class="fas fa-child"></i>
+                    Children
+                </a>
+                <a href="/admin/schools" class="menu-item active">
+                    <i class="fas fa-school"></i>
+                    Schools
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">Integrations</div>
+                <a href="/admin/integrations" class="menu-item">
+                    <i class="fas fa-plug"></i>
+                    3rd Party Integration
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">System</div>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+                <a href="/admin/logout" class="menu-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-header">
+            <h1 class="page-title">School Details</h1>
+            <div class="header-actions">
+                <a href="/admin/schools" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Schools
+                </a>
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-2"></i><%= user ? user.firstName : 'Admin' %>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/admin/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <!-- Loading State -->
+            <div class="detail-card" id="loadingCard">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading school details...</p>
+                </div>
+            </div>
+
+            <!-- School Details (will be populated by JavaScript) -->
+            <div id="schoolDetails" style="display: none;">
+                <!-- Profile Section -->
+                <div class="detail-card">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <div class="school-photo" id="schoolPhoto">
+                                <i class="fas fa-school"></i>
+                            </div>
+                            <h4 id="schoolName">Loading...</h4>
+                            <span class="status-badge status-active" id="statusBadge">Active</span>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="detail-section">
+                                <h5 class="detail-title">
+                                    <i class="fas fa-school"></i>Basic Information
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="detail-item">
+                                            <span class="detail-label">School Type:</span>
+                                            <span class="detail-value" id="schoolType">-</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Phone:</span>
+                                            <span class="detail-value" id="schoolPhone">-</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Email:</span>
+                                            <span class="detail-value" id="schoolEmail">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="detail-item">
+                                            <span class="detail-label">Website:</span>
+                                            <span class="detail-value" id="schoolWebsite">-</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Established:</span>
+                                            <span class="detail-value" id="establishedYear">-</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Total Students:</span>
+                                            <span class="detail-value" id="totalStudents">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="detail-item" id="descriptionRow">
+                                    <span class="detail-label">Description:</span>
+                                    <span class="detail-value" id="schoolDescription">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location Section -->
+                <div class="detail-card">
+                    <h5 class="detail-title">
+                        <i class="fas fa-map-marker-alt"></i>Location Information
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="detail-item">
+                                <span class="detail-label">Street Address:</span>
+                                <span class="detail-value" id="streetAddress">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">City:</span>
+                                <span class="detail-value" id="city">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Sub-City:</span>
+                                <span class="detail-value" id="subCity">-</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detail-item">
+                                <span class="detail-label">Woreda:</span>
+                                <span class="detail-value" id="woreda">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Full Address:</span>
+                                <span class="detail-value" id="fullAddress">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Coordinates:</span>
+                                <span class="detail-value" id="coordinates">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Map -->
+                    <div class="mt-3">
+                        <h6>Location Map</h6>
+                        <div class="map-container" id="mapContainer">
+                            <div class="text-center">
+                                <i class="fas fa-map-marked-alt fa-2x mb-2"></i>
+                                <p>Map view will be available here</p>
+                                <small>Coordinates: <span id="mapCoords">-</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Children Section -->
+                <div class="detail-card">
+                    <h5 class="detail-title">
+                        <i class="fas fa-child"></i>Associated Children
+                        <span class="badge bg-info ms-2" id="childrenCount">0</span>
+                    </h5>
+                    <div id="childrenContainer">
+                        <div class="children-grid" id="childrenGrid">
+                            <!-- Children will be populated here -->
+                        </div>
+                        <div id="noChildren" class="text-center text-muted" style="display: none;">
+                            <i class="fas fa-child fa-3x mb-3"></i>
+                            <p>No children associated with this school</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="detail-card">
+                    <div class="d-flex gap-3">
+                        <button class="btn btn-primary" onclick="editSchool()">
+                            <i class="fas fa-edit me-2"></i>Edit School
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteSchool()">
+                            <i class="fas fa-trash me-2"></i>Delete School
+                        </button>
+                        <button class="btn btn-info" onclick="viewChildren()">
+                            <i class="fas fa-child me-2"></i>View All Children
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Get school ID from URL
+        const schoolId = '<%= schoolId %>';
+        let schoolData = null;
+
+        // Toggle sidebar for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        }
+
+        // Load school details
+        async function loadSchoolDetails() {
+            try {
+                const response = await fetch(`/admin/schools/api/${schoolId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    schoolData = result.data;
+                    displaySchoolDetails(schoolData);
+                } else {
+                    showError('School not found');
+                }
+            } catch (error) {
+                console.error('Error loading school details:', error);
+                showError('Error loading school details');
+            }
+        }
+
+        // Display school details
+        function displaySchoolDetails(school) {
+            // Hide loading, show details
+            document.getElementById('loadingCard').style.display = 'none';
+            document.getElementById('schoolDetails').style.display = 'block';
+
+            // Profile section
+            if (school.photo) {
+                document.getElementById('schoolPhoto').innerHTML = `<img src="${school.photo}" alt="${school.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 15px;">`;
+            }
+            
+            document.getElementById('schoolName').textContent = school.name;
+            
+            // Status badge
+            const statusBadge = document.getElementById('statusBadge');
+            statusBadge.textContent = school.isActive ? 'Active' : 'Inactive';
+            statusBadge.className = `status-badge ${school.isActive ? 'status-active' : 'status-inactive'}`;
+
+            // Basic information
+            document.getElementById('schoolType').textContent = school.type;
+            document.getElementById('schoolPhone').textContent = school.phone;
+            document.getElementById('schoolEmail').textContent = school.email || 'Not provided';
+            document.getElementById('schoolWebsite').textContent = school.website || 'Not provided';
+            document.getElementById('establishedYear').textContent = school.establishedYear || 'Not specified';
+            document.getElementById('totalStudents').textContent = school.totalStudents || 0;
+            
+            // Description
+            if (school.description) {
+                document.getElementById('descriptionRow').style.display = 'flex';
+                document.getElementById('schoolDescription').textContent = school.description;
+            } else {
+                document.getElementById('descriptionRow').style.display = 'none';
+            }
+
+            // Location information
+            document.getElementById('streetAddress').textContent = school.location.address;
+            document.getElementById('city').textContent = school.location.city;
+            document.getElementById('subCity').textContent = school.location.subCity || 'Not specified';
+            document.getElementById('woreda').textContent = school.location.woreda || 'Not specified';
+            document.getElementById('fullAddress').textContent = school.fullAddress;
+            document.getElementById('coordinates').textContent = `${school.location.coordinates.lat}, ${school.location.coordinates.lng}`;
+            document.getElementById('mapCoords').textContent = `${school.location.coordinates.lat}, ${school.location.coordinates.lng}`;
+
+            // Load children
+            loadChildren();
+        }
+
+        // Load children
+        async function loadChildren() {
+            try {
+                const response = await fetch(`/admin/children/api/school/${schoolId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayChildren(result.data);
+                }
+            } catch (error) {
+                console.error('Error loading children:', error);
+            }
+        }
+
+        // Display children
+        function displayChildren(children) {
+            const childrenGrid = document.getElementById('childrenGrid');
+            const noChildren = document.getElementById('noChildren');
+            const childrenCount = document.getElementById('childrenCount');
+            
+            childrenCount.textContent = children.length;
+            
+            if (children.length === 0) {
+                childrenGrid.style.display = 'none';
+                noChildren.style.display = 'block';
+            } else {
+                childrenGrid.style.display = 'grid';
+                noChildren.style.display = 'none';
+                
+                childrenGrid.innerHTML = children.map(child => `
+                    <div class="child-card">
+                        <div class="child-avatar">
+                            ${child.firstName.charAt(0)}${child.lastName.charAt(0)}
+                        </div>
+                        <div class="child-info">
+                            <h6>${child.firstName} ${child.lastName}</h6>
+                            <small>${child.grade} • Age ${child.age}</small>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Show error
+        function showError(message) {
+            document.getElementById('loadingCard').innerHTML = `
+                <div class="text-center text-danger">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                    <h4>Error</h4>
+                    <p>${message}</p>
+                    <a href="/admin/schools" class="btn btn-primary">Back to Schools</a>
+                </div>
+            `;
+        }
+
+        // Action functions
+        function editSchool() {
+            window.location.href = `/admin/schools/${schoolId}/edit`;
+        }
+
+        function deleteSchool() {
+            if (!schoolData) return;
+            
+            if (confirm(`Are you sure you want to delete school "${schoolData.name}"? This action cannot be undone.`)) {
+                window.location.href = `/admin/schools/${schoolId}/delete`;
+            }
+        }
+
+        function viewChildren() {
+            window.location.href = `/admin/children?school=${schoolId}`;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSchoolDetails();
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.mobile-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !toggle.contains(event.target) &&
+                sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>
