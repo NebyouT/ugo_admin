@@ -1,0 +1,26 @@
+services:
+  # Web Service
+  - type: web
+    name: ugo-admin
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    
+    # Environment Variables (set these in Render dashboard)
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false  # Set this in Render dashboard
+      - key: JWT_SECRET
+        sync: false  # Set this in Render dashboard
+      - key: ADMIN_EMAIL
+        sync: false  # Set this in Render dashboard
+      - key: ADMIN_PASSWORD
+        sync: false  # Set this in Render dashboard
+      - key: ADMIN_FIRST_NAME
+        sync: false  # Set this in Render dashboard
+      - key: ADMIN_LAST_NAME
+        sync: false  # Set this in Render dashboard
