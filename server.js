@@ -13,28 +13,28 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
-// Security middleware with custom CSP - UPDATED FOR PRODUCTION
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
-      styleSrcElem: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
-      scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
-      scriptSrcElem: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https://picsum.photos", "https://fastly.picsum.photos", "https://ui-avatars.com"],
-      fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
-      connectSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
-      frameSrc: ["'none'"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      manifestSrc: ["'self'"],
-      workerSrc: ["'self'"],
-      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : []
-    }
-  },
-  crossOriginEmbedderPolicy: false
-}));
+// Security middleware - TEMPORARILY DISABLED FOR DEBUGGING
+// app.use(helmet({
+//   contentSecurityPolicy: {
+//     directives: {
+//       defaultSrc: ["'self'"],
+//       styleSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+//       styleSrcElem: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+//       scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+//       scriptSrcElem: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+//       imgSrc: ["'self'", "data:", "https://picsum.photos", "https://fastly.picsum.photos", "https://ui-avatars.com"],
+//       fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
+//       connectSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+//       frameSrc: ["'none'"],
+//       objectSrc: ["'none'"],
+//       mediaSrc: ["'self'"],
+//       manifestSrc: ["'self'"],
+//       workerSrc: ["'self'"],
+//       upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : []
+//     }
+//   },
+//   crossOriginEmbedderPolicy: false
+// }));
 app.use(cors());
 
 // Rate limiting
@@ -54,34 +54,67 @@ app.use(cookieParser());
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Static files - FIXED FOR RENDER DEPLOYMENT
-if (process.env.NODE_ENV === 'production') {
-  // Production static file serving with proper MIME types
-  app.use('/js', express.static(path.join(__dirname, 'public/js'), {
+// CRITICAL FIX: Static files MUST be served before everything else
+console.log('Setting up static file serving for production...');
+
+// Serve static files with explicit paths and debugging
+app.use('/js', (req, res, next) => {
+  console.log('JS Request:', req.url);
+  const staticHandler = express.static(path.join(__dirname, 'public/js'), {
     setHeaders: (res, filePath) => {
+      console.log('Serving JS file:', filePath);
       if (filePath.endsWith('.js')) {
         res.setHeader('Content-Type', 'application/javascript');
       }
     }
-  }));
-  
-  app.use('/css', express.static(path.join(__dirname, 'public/css'), {
-    setHeaders: (res, filePath) => {
-      if (filePath.endsWith('.css')) {
-        res.setHeader('Content-Type', 'text/css');
-      }
+  });
+  staticHandler(req, res, next);
+});
+
+app.use('/css', express.static(path.join(__dirname, 'public/css'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
     }
-  }));
+  }
+}));
+
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
+app.use('/public', express.static(path.join(__dirname, 'public')));
+
+// Add debug endpoint for static files
+app.get('/debug/static', (req, res) => {
+  const fs = require('fs');
+  const loginJsPath = path.join(__dirname, 'public/js/login.js');
+  const exists = fs.existsSync(loginJsPath);
   
-  app.use('/images', express.static(path.join(__dirname, 'public/images')));
-  app.use('/public', express.static(path.join(__dirname, 'public')));
-} else {
-  // Development static serving
-  app.use('/js', express.static(path.join(__dirname, 'public/js')));
-  app.use('/css', express.static(path.join(__dirname, 'public/css')));
-  app.use('/images', express.static(path.join(__dirname, 'public/images')));
-  app.use('/public', express.static(path.join(__dirname, 'public')));
-}
+  res.json({
+    loginJsPath,
+    exists,
+    publicDir: path.join(__dirname, 'public'),
+    jsDir: path.join(__dirname, 'public/js'),
+    jsFiles: exists ? fs.readdirSync(path.join(__dirname, 'public/js')) : [],
+    loginJsContent: exists ? fs.readFileSync(loginJsPath, 'utf8').substring(0, 200) + '...' : 'File not found'
+  });
+});
+
+// DIRECT ROUTE FOR LOGIN.JS - Backup solution
+app.get('/js/login.js', (req, res) => {
+  const fs = require('fs');
+  const loginJsPath = path.join(__dirname, 'public/js/login.js');
+  
+  console.log('Direct route serving login.js:', loginJsPath);
+  
+  if (fs.existsSync(loginJsPath)) {
+    const content = fs.readFileSync(loginJsPath, 'utf8');
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(content);
+  } else {
+    console.error('login.js not found at:', loginJsPath);
+    res.status(404).send('// login.js not found');
+  }
+});
 
 // MongoDB Connection
 const connectDB = async () => {
