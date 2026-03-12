@@ -19,8 +19,120 @@ router.get('/login', (req, res) => {
   });
 });
 
-// Admin login API - Use auth module
-router.post('/auth/login', require('../modules/auth/routes/auth'));
+// Admin login POST - Web-friendly login with redirect
+router.post('/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
+    }
+
+    // Import User model and AuthController
+    const User = require('../modules/user-management/models/User');
+    
+    // Find user by credentials
+    const user = await User.findByCredentials(email, password);
+
+    // Generate JWT token
+    const token = user.generateAuthToken();
+
+    // Set HTTP-only cookie with token
+    res.cookie('adminAuth', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/'
+    });
+
+    // Update last login
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    // Log successful login
+    console.log(`User logged in: ${email} (${user.role}) at ${new Date().toISOString()}`);
+
+    // Check if this is an AJAX request (JSON expected)
+    if (req.xhr || req.headers.accept?.indexOf('json') > -1) {
+      return res.json({
+        success: true,
+        message: 'Login successful',
+        redirect: '/admin',
+        data: {
+          user: {
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+            userType: user.userType
+          }
+        }
+      });
+    }
+
+    // For regular form submissions, redirect to dashboard
+    res.redirect('/admin');
+
+  } catch (error) {
+    console.error('Login error:', error.message);
+    
+    // Return appropriate error message
+    let statusCode = 500;
+    let message = 'Login failed';
+
+    if (error.message.includes('Invalid credentials')) {
+      statusCode = 401;
+      message = 'Invalid email or password';
+    } else if (error.message.includes('Account is temporarily locked')) {
+      statusCode = 423;
+      message = 'Account temporarily locked due to multiple failed attempts. Please try again later.';
+    } else if (error.message.includes('Account is not active')) {
+      statusCode = 403;
+      message = 'Account is not active. Please contact administrator.';
+    }
+
+    // Check if this is an AJAX request
+    if (req.xhr || req.headers.accept?.indexOf('json') > -1) {
+      return res.status(statusCode).json({
+        success: false,
+        message: message
+      });
+    }
+
+    // For regular form submissions, render login page with error
+    res.status(statusCode).render('login', { 
+      title: 'Admin Login - UGO',
+      error: message
+    });
+  }
+});
+
+// Auth check endpoint for JavaScript
+router.get('/auth/check', (req, res) => {
+  if (req.cookies?.adminAuth) {
+    return res.json({
+      success: true,
+      message: 'User is authenticated',
+      data: {
+        authenticated: true
+      }
+    });
+  }
+  
+  res.json({
+    success: false,
+    message: 'User not authenticated',
+    data: {
+      authenticated: false
+    }
+  });
+});
 
 // Admin dashboard (protected)
 router.get('/', webAuthenticate, webAdminOnly, (req, res) => {

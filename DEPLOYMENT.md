@@ -11,14 +11,31 @@ The CSP errors you're experiencing on Render are caused by the default security 
 The server now includes a comprehensive CSP configuration that allows:
 
 ```javascript
-styleSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
-styleSrcElem: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
-scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
-scriptSrcElem: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
-imgSrc: ["'self'", "data:", "https://picsum.photos", "https://ui-avatars.com"],
-fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
-connectSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"]
+contentSecurityPolicy: {
+  directives: {
+    defaultSrc: ["'self'"],
+    styleSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+    styleSrcElem: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+    scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+    scriptSrcElem: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+    imgSrc: ["'self'", "data:", "https://picsum.photos", "https://fastly.picsum.photos", "https://ui-avatars.com"],
+    fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
+    connectSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+    frameSrc: ["'none'"],
+    objectSrc: ["'none'"],
+    mediaSrc: ["'self'"],
+    manifestSrc: ["'self'"],
+    workerSrc: ["'self'"],
+    upgradeInsecureRequests: []
+  }
+}
 ```
+
+**Key Updates:**
+- ✅ Added `'unsafe-inline'` to `styleSrcElem` and `scriptSrcElem` directives
+- ✅ Added `https://fastly.picsum.photos` to `imgSrc` directive
+- ✅ Resolved all inline style and script violations
+- ✅ Fixed image loading from Picsum Photos CDN
 
 ## 🔧️ Render Deployment Steps
 

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const UserLevel = require('../models/UserLevel');
 
 const userSchema = new mongoose.Schema({
@@ -68,7 +69,7 @@ const userSchema = new mongoose.Schema({
   gender: {
     type: String,
     enum: ['male', 'female', 'other'],
-    default: null
+    required: false
   },
   
   // Identification
@@ -79,7 +80,7 @@ const userSchema = new mongoose.Schema({
   identificationType: {
     type: String,
     enum: ['national_id', 'passport', 'driving_license', 'student_id'],
-    default: null
+    required: false
   },
   identificationImage: {
     type: [String],
@@ -219,6 +220,43 @@ const userSchema = new mongoose.Schema({
   },
   tempBlockedUntil: Date,
   
+  // OTP Fields
+  otp: {
+    type: String,
+    default: null
+  },
+  otpExpiresAt: {
+    type: Date,
+    default: null
+  },
+  otpPurpose: {
+    type: String,
+    enum: ['registration', 'password_reset', 'login_verification', 'phone_verification'],
+    required: false
+  },
+  otpGeneratedAt: {
+    type: Date,
+    default: null
+  },
+  verifiedAt: {
+    type: Date,
+    default: null
+  },
+  
+  // Device Tracking
+  deviceInfo: {
+    device_id: String,
+    device_type: {
+      type: String,
+      enum: ['web', 'android', 'ios', 'desktop'],
+      required: false,
+      default: 'web'
+    },
+    fcm_token: String,
+    user_agent: String,
+    ip_address: String
+  },
+  
   // Preferences
   preferences: {
     language: {
@@ -276,11 +314,58 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// Instance Methods
+// Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+  try {
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (error) {
+    throw error;
+  }
 };
 
+// Generate JWT token
+userSchema.methods.generateAuthToken = function() {
+  const payload = {
+    id: this._id,
+    email: this.email,
+    role: this.role || this.userType,
+    userType: this.userType
+  };
+  
+  return jwt.sign(payload, process.env.JWT_SECRET || 'your-secret-key', {
+    expiresIn: '7d'
+  });
+};
+
+// Find user by credentials for authentication
+userSchema.statics.findByCredentials = async function(email, password) {
+  try {
+    // Find user by email with password field included
+    const user = await this.findOne({ email }).select('+password');
+    
+    if (!user) {
+      throw new Error('Invalid credentials');
+    }
+    
+    // Check if account is active
+    if (!user.isActive) {
+      throw new Error('Account is not active');
+    }
+    
+    // Compare password
+    const isMatch = await user.comparePassword(password);
+    
+    if (!isMatch) {
+      throw new Error('Invalid credentials');
+    }
+    
+    return user;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Instance Methods
 userSchema.methods.generateReferralCode = function() {
   if (this.referralCode) return this.referralCode;
   

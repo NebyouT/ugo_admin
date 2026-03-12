@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const User = require('../../user-management/models/User');
 const DriverDetail = require('../../user-management/models/DriverDetail');
 const { generateOTP, formatOTPExpiry } = require('../utils/otpUtils');
 
@@ -145,7 +145,7 @@ class AdminAuthController {
             const { limit = 50, userType, dateRange } = req.query;
             
             // Build date filter
-            let dateFilter = {};
+            let dateFilter = null;
             if (dateRange === 'today') {
                 dateFilter = {
                     $gte: new Date(new Date().setHours(0, 0, 0, 0))
@@ -297,7 +297,10 @@ class AdminAuthController {
             user.verifiedAt = new Date();
             user.otp = null;
             user.otpExpiresAt = null;
-            user.otpPurpose = null;
+            // Remove otpPurpose field instead of setting to null
+            if (user.otpPurpose) {
+                user.otpPurpose = undefined;
+            }
             await user.save();
 
             res.json({

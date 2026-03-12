@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../../user-management/models/User');
 
 // Authentication middleware
 const authenticate = async (req, res, next) => {
@@ -28,7 +28,7 @@ const authenticate = async (req, res, next) => {
         }
 
         // Check if user is active
-        if (user.status !== 'active') {
+        if (!user.isActive) {
             return res.status(403).json({
                 success: false,
                 message: 'Account is not active.'

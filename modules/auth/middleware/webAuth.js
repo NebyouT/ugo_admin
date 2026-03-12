@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../../user-management/models/User');
 
 // Web authentication middleware - redirects to login for web routes
 const webAuthenticate = async (req, res, next) => {
@@ -25,7 +25,7 @@ const webAuthenticate = async (req, res, next) => {
         }
 
         // Check if user is active
-        if (user.status !== 'active') {
+        if (!user.isActive) {
             // Clear token and redirect
             res.clearCookie('adminAuth');
             return res.redirect('/admin/login');
@@ -80,7 +80,7 @@ const webOptionalAuth = async (req, res, next) => {
             // Find user by id
             const user = await User.findById(decoded.id).select('-password');
 
-            if (user && user.status === 'active') {
+            if (user && user.isActive) {
                 req.user = user;
             }
         }
