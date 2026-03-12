@@ -13,7 +13,7 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
-// Security middleware with custom CSP
+// Security middleware with custom CSP - UPDATED FOR PRODUCTION
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -30,9 +30,10 @@ app.use(helmet({
       mediaSrc: ["'self'"],
       manifestSrc: ["'self'"],
       workerSrc: ["'self'"],
-      upgradeInsecureRequests: []
+      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : []
     }
-  }
+  },
+  crossOriginEmbedderPolicy: false
 }));
 app.use(cors());
 
@@ -53,10 +54,34 @@ app.use(cookieParser());
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Static files
-app.use(express.static('public'));
-app.use('/public', express.static('public'));
-app.use(express.static(path.join(__dirname, 'public')));
+// Static files - FIXED FOR RENDER DEPLOYMENT
+if (process.env.NODE_ENV === 'production') {
+  // Production static file serving with proper MIME types
+  app.use('/js', express.static(path.join(__dirname, 'public/js'), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      }
+    }
+  }));
+  
+  app.use('/css', express.static(path.join(__dirname, 'public/css'), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css');
+      }
+    }
+  }));
+  
+  app.use('/images', express.static(path.join(__dirname, 'public/images')));
+  app.use('/public', express.static(path.join(__dirname, 'public')));
+} else {
+  // Development static serving
+  app.use('/js', express.static(path.join(__dirname, 'public/js')));
+  app.use('/css', express.static(path.join(__dirname, 'public/css')));
+  app.use('/images', express.static(path.join(__dirname, 'public/images')));
+  app.use('/public', express.static(path.join(__dirname, 'public')));
+}
 
 // MongoDB Connection
 const connectDB = async () => {
@@ -70,16 +95,24 @@ const connectDB = async () => {
   }
 };
 
-// Clean Routes - Only the essential ones
-app.use('/', require('./routes/web'));
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0'
+  });
+});
+
+// API Routes (MUST come after static files)
 app.use('/api', require('./routes/api'));
-app.use('/admin', require('./routes/admin'));
-
-// API Authentication Routes
 app.use('/api/auth', require('./modules/auth/routes/apiAuth'));
-
-// Admin Authentication Routes
 app.use('/api/admin/auth', require('./modules/auth/routes/adminAuth'));
+
+// Page Routes (MUST come last to avoid conflicts with static files)
+app.use('/', require('./routes/web'));
+app.use('/admin', require('./routes/admin'));
 
 // Seed admin user (for development)
 app.post('/seed-admin', async (req, res) => {
