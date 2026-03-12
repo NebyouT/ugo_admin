@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin-left: 250px; /* Space for sidebar */
+        }
+
+        .main-content {
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .page-header {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .users-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .role-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+        }
+
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .filter-section {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                margin-left: 0;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Component -->
+    <%- include('../../components/sidebar', { user: user, currentPath: currentPath }) %>
+
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">User Management</h1>
+                    <p class="text-muted mb-0">Manage users, customers, and drivers</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-secondary me-2" onclick="refreshUsers()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                        <i class="fas fa-plus me-2"></i>Add User
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="totalUsers">-</div>
+                    <div class="text-muted">Total Users</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="totalCustomers">-</div>
+                    <div class="text-muted">Customers</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="totalDrivers">-</div>
+                    <div class="text-muted">Drivers</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="activeUsers">-</div>
+                    <div class="text-muted">Active Users</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="searchInput" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search users...">
+                </div>
+                <div class="col-md-2">
+                    <label for="userTypeFilter" class="form-label">User Type</label>
+                    <select class="form-select" id="userTypeFilter">
+                        <option value="">All Types</option>
+                        <option value="customer">Customer</option>
+                        <option value="driver">Driver</option>
+                        <option value="admin">Admin</option>
+                        <option value="employee">Employee</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="customerTypeFilter" class="form-label">Customer Type</label>
+                    <select class="form-select" id="customerTypeFilter">
+                        <option value="">All Types</option>
+                        <option value="regular">Regular</option>
+                        <option value="student">Student</option>
+                        <option value="parent">Parent</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="statusFilter" class="form-label">Status</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button class="btn btn-outline-primary" onclick="applyFilters()">
+                            <i class="fas fa-filter me-2"></i>Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="users-card">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Type</th>
+                            <th>Contact</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- Users will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="pagination-container">
+                <div class="text-muted" id="paginationInfo">
+                    Showing 0 of 0 users
+                </div>
+                <nav id="paginationNav">
+                    <!-- Pagination will be loaded here -->
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addUserForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="firstName" class="form-label">First Name *</label>
+                                <input type="text" class="form-control" id="firstName" name="firstName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="lastName" class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" id="lastName" name="lastName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Phone *</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="userType" class="form-label">User Type *</label>
+                                <select class="form-select" id="userType" name="userType" required>
+                                    <option value="customer">Customer</option>
+                                    <option value="driver">Driver</option>
+                                    <option value="employee">Employee</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="customerType" class="form-label">Customer Type</label>
+                                <select class="form-select" id="customerType" name="customerType">
+                                    <option value="regular">Regular</option>
+                                    <option value="student">Student</option>
+                                    <option value="parent">Parent</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="password" class="form-label">Password *</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="role" class="form-label">Role</label>
+                                <select class="form-select" id="role" name="role">
+                                    <option value="customer">Customer</option>
+                                    <option value="driver">Driver</option>
+                                    <option value="employee">Employee</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveUser()">Save User</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+        <div id="alertContainer"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentUser = null;
+        let users = [];
+        let currentPage = 1;
+        let totalUsers = 0;
+        let totalPages = 0;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+        });
+
+        // Check authentication and load data
+        async function initializePage() {
+            try {
+                await checkAuthStatus();
+                await loadUsers();
+                await loadUserStats();
+                setupEventListeners();
+            } catch (error) {
+                console.error('Failed to initialize page:', error);
+                if (error.message.includes('Authentication')) {
+                    window.location.href = '/admin/login';
+                }
+            }
+        }
+
+        // Check authentication status
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch('/admin/auth/check');
+                const result = await response.json();
+                
+                if (!result.success || !result.data.user) {
+                    throw new Error('Authentication failed');
+                }
+                
+                currentUser = result.data.user;
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = '/admin/login';
+                throw error;
+            }
+        }
+
+        // Load users from API
+        async function loadUsers(page = 1, filters = {}) {
+            try {
+                const params = new URLSearchParams({
+                    page: page.toString(),
+                    limit: '10',
+                    ...filters
+                });
+                
+                const response = await fetch(`/api/users?${params}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    users = result.data.users || [];
+                    currentPage = result.data.pagination.current;
+                    totalPages = result.data.pagination.pages;
+                    totalUsers = result.data.pagination.total;
+                    
+                    renderUsersTable();
+                    updatePagination();
+                } else {
+                    throw new Error(result.message || 'Failed to load users');
+                }
+            } catch (error) {
+                console.error('Load users error:', error);
+                showAlert('Failed to load users. Please try again.', 'danger');
+            }
+        }
+
+        // Load user statistics
+        async function loadUserStats() {
+            try {
+                const response = await fetch('/api/users/stats');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const stats = result.data;
+                    document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
+                    document.getElementById('totalCustomers').textContent = stats.customerStats?.reduce((sum, stat) => sum + stat.count, 0) || 0;
+                    document.getElementById('totalDrivers').textContent = stats.driverStats?.totalDrivers || 0;
+                    document.getElementById('activeUsers').textContent = stats.totalUsers || 0;
+                }
+            } catch (error) {
+                console.error('Load stats error:', error);
+                // Set default values
+                document.getElementById('totalUsers').textContent = '0';
+                document.getElementById('totalCustomers').textContent = '0';
+                document.getElementById('totalDrivers').textContent = '0';
+                document.getElementById('activeUsers').textContent = '0';
+            }
+        }
+
+        // Render users table
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+
+            if (users.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <div>No users found</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            users.forEach(user => {
+                const row = createUserRow(user);
+                tbody.appendChild(row);
+            });
+        }
+
+        // Create user table row
+        function createUserRow(user) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div class="d-flex align-items-center">
+                        <img src="${user.profileImage || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=random`}" 
+                             alt="${user.fullName}" class="user-avatar me-3">
+                        <div>
+                            <div class="fw-semibold">${user.firstName} ${user.lastName}</div>
+                            <div class="text-muted small">${user.customerType || '-'}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge bg-${getUserTypeColor(user.userType)}">${user.userType}</span>
+                </td>
+                <td>
+                    <div class="small">
+                        <div><i class="fas fa-envelope me-1"></i>${user.email}</div>
+                        <div><i class="fas fa-phone me-1"></i>${user.phone}</div>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge bg-secondary">${user.role || 'N/A'}</span>
+                </td>
+                <td>
+                    <span class="badge bg-${user.isActive ? 'success' : 'danger'} status-badge">
+                        ${user.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td>
+                    <div class="small text-muted">
+                        ${new Date(user.createdAt).toLocaleDateString()}
+                    </div>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewUser('${user._id}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="editUser('${user._id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-${user.isActive ? 'warning' : 'success'}" 
+                                onclick="toggleUserStatus('${user._id}')">
+                            <i class="fas fa-${user.isActive ? 'ban' : 'check'}"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser('${user._id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            return tr;
+        }
+
+        // Get user type badge color
+        function getUserTypeColor(userType) {
+            const colors = {
+                'customer': 'primary',
+                'driver': 'success',
+                'admin': 'danger',
+                'employee': 'info'
+            };
+            return colors[userType] || 'secondary';
+        }
+
+        // Update pagination
+        function updatePagination() {
+            const paginationInfo = document.getElementById('paginationInfo');
+            const paginationNav = document.getElementById('paginationNav');
+            
+            paginationInfo.textContent = `Showing ${users.length} of ${totalUsers} users`;
+            
+            if (totalPages <= 1) {
+                paginationNav.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '<ul class="pagination pagination-sm">';
+            
+            // Previous button
+            paginationHTML += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="loadUsers(${currentPage - 1}); return false;">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+            `;
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    paginationHTML += `
+                        <li class="page-item ${i === currentPage ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="loadUsers(${i}); return false;">${i}</a>
+                        </li>
+                    `;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    paginationHTML += '<li class="page-item disabled"><a class="page-link">...</a></li>';
+                }
+            }
+
+            // Next button
+            paginationHTML += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="loadUsers(${currentPage + 1}); return false;">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            `;
+
+            paginationHTML += '</ul>';
+            paginationNav.innerHTML = paginationHTML;
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Search input
+            document.getElementById('searchInput').addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    applyFilters();
+                }
+            });
+
+            // User type change
+            document.getElementById('userType').addEventListener('change', function() {
+                const customerTypeField = document.getElementById('customerType').closest('.col-md-6');
+                if (this.value === 'customer') {
+                    customerTypeField.style.display = 'block';
+                } else {
+                    customerTypeField.style.display = 'none';
+                }
+            });
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const filters = {
+                search: document.getElementById('searchInput').value,
+                userType: document.getElementById('userTypeFilter').value,
+                customerType: document.getElementById('customerTypeFilter').value,
+                status: document.getElementById('statusFilter').value
+            };
+
+            loadUsers(1, filters);
+        }
+
+        // Refresh users
+        async function refreshUsers() {
+            await loadUsers(currentPage);
+            await loadUserStats();
+            showAlert('Data refreshed successfully', 'success');
+        }
+
+        // Save user (create)
+        async function saveUser() {
+            try {
+                const formData = new FormData(document.getElementById('addUserForm'));
+                const userData = Object.fromEntries(formData);
+
+                // Validate required fields
+                if (!userData.firstName || !userData.lastName || !userData.email || !userData.password) {
+                    showAlert('Please fill in all required fields', 'danger');
+                    return;
+                }
+
+                // Email validation
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(userData.email)) {
+                    showAlert('Please enter a valid email address', 'danger');
+                    return;
+                }
+
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('User created successfully!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+                    document.getElementById('addUserForm').reset();
+                    await loadUsers();
+                    await loadUserStats();
+                } else {
+                    showAlert(result.message || 'Failed to create user', 'danger');
+                }
+            } catch (error) {
+                console.error('Save user error:', error);
+                showAlert('Failed to save user. Please try again.', 'danger');
+            }
+        }
+
+        // View user details
+        async function viewUser(userId) {
+            try {
+                const response = await fetch(`/api/users/${userId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const user = result.data.user;
+                    // Create a simple modal to show user details
+                    const modalHTML = `
+                        <div class="modal fade" id="viewUserModal" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">User Details</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>Basic Information</h6>
+                                                <p><strong>Name:</strong> ${user.firstName} ${user.lastName}</p>
+                                                <p><strong>Email:</strong> ${user.email}</p>
+                                                <p><strong>Phone:</strong> ${user.phone}</p>
+                                                <p><strong>User Type:</strong> ${user.userType}</p>
+                                                <p><strong>Status:</strong> ${user.isActive ? 'Active' : 'Inactive'}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Additional Information</h6>
+                                                <p><strong>Role:</strong> ${user.role || 'N/A'}</p>
+                                                <p><strong>Customer Type:</strong> ${user.customerType || 'N/A'}</p>
+                                                <p><strong>Loyalty Points:</strong> ${user.loyaltyPoints || 0}</p>
+                                                <p><strong>Joined:</strong> ${new Date(user.createdAt).toLocaleDateString()}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Remove existing modal if any
+                    const existingModal = document.getElementById('viewUserModal');
+                    if (existingModal) {
+                        existingModal.remove();
+                    }
+                    
+                    // Add new modal and show it
+                    document.body.insertAdjacentHTML('beforeend', modalHTML);
+                    const modal = new bootstrap.Modal(document.getElementById('viewUserModal'));
+                    modal.show();
+                } else {
+                    showAlert(result.message || 'Failed to load user details', 'danger');
+                }
+            } catch (error) {
+                console.error('View user error:', error);
+                showAlert('Failed to load user details', 'danger');
+            }
+        }
+
+        // Edit user
+        function editUser(userId) {
+            // For now, just show an alert - this would open an edit modal
+            showAlert('Edit functionality coming soon!', 'info');
+        }
+
+        // Toggle user status
+        async function toggleUserStatus(userId) {
+            try {
+                const response = await fetch(`/api/users/${userId}/toggle-status`, {
+                    method: 'PATCH'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    await loadUsers();
+                    await loadUserStats();
+                } else {
+                    showAlert(result.message || 'Failed to toggle user status', 'danger');
+                }
+            } catch (error) {
+                console.error('Toggle status error:', error);
+                showAlert('Failed to toggle user status', 'danger');
+            }
+        }
+
+        // Delete user
+        async function deleteUser(userId) {
+            if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/users/${userId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('User deleted successfully', 'success');
+                    await loadUsers();
+                    await loadUserStats();
+                } else {
+                    showAlert(result.message || 'Failed to delete user', 'danger');
+                }
+            } catch (error) {
+                console.error('Delete user error:', error);
+                showAlert('Failed to delete user', 'danger');
+            }
+        }
+
+        // Show alert message
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertId = 'alert-' + Date.now();
+            
+            const alertHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert" id="${alertId}">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+
+        // Periodic auth check (every 5 minutes)
+        setInterval(checkAuthStatus, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

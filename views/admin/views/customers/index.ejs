@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin-left: 250px;
+        }
+
+        .main-content {
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .page-header {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .customers-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .customer-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .customer-type-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+        }
+
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .filter-section {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .loyalty-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                margin-left: 0;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Component -->
+    <%- include('../../components/sidebar', { user: user, currentPath: currentPath }) %>
+
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">Customer Management</h1>
+                    <p class="text-muted mb-0">Manage customers, students, and parents</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-secondary me-2" onclick="refreshCustomers()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                        <i class="fas fa-plus me-2"></i>Add Customer
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="totalCustomers">-</div>
+                    <div class="text-muted">Total Customers</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="regularCustomers">-</div>
+                    <div class="text-muted">Regular</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="studentCustomers">-</div>
+                    <div class="text-muted">Students</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="parentCustomers">-</div>
+                    <div class="text-muted">Parents</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="searchInput" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search customers...">
+                </div>
+                <div class="col-md-2">
+                    <label for="customerTypeFilter" class="form-label">Customer Type</label>
+                    <select class="form-select" id="customerTypeFilter">
+                        <option value="">All Types</option>
+                        <option value="regular">Regular</option>
+                        <option value="student">Student</option>
+                        <option value="parent">Parent</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="statusFilter" class="form-label">Status</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="loyaltyFilter" class="form-label">Min Points</label>
+                    <input type="number" class="form-control" id="loyaltyFilter" placeholder="0" min="0">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button class="btn btn-outline-primary" onclick="applyFilters()">
+                            <i class="fas fa-filter me-2"></i>Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customers Table -->
+        <div class="customers-card">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Type</th>
+                            <th>Contact</th>
+                            <th>Loyalty Points</th>
+                            <th>Level</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customersTableBody">
+                        <!-- Customers will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="pagination-container">
+                <div class="text-muted" id="paginationInfo">
+                    Showing 0 of 0 customers
+                </div>
+                <nav id="paginationNav">
+                    <!-- Pagination will be loaded here -->
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Customer Modal -->
+    <div class="modal fade" id="addCustomerModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Customer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCustomerForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="firstName" class="form-label">First Name *</label>
+                                <input type="text" class="form-control" id="firstName" name="firstName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="lastName" class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" id="lastName" name="lastName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Phone *</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="customerType" class="form-label">Customer Type *</label>
+                                <select class="form-select" id="customerType" name="customerType" required>
+                                    <option value="regular">Regular</option>
+                                    <option value="student">Student</option>
+                                    <option value="parent">Parent</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="password" class="form-label">Password *</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                            </div>
+                            
+                            <!-- Student Specific Fields -->
+                            <div id="studentFields" style="display: none;">
+                                <div class="col-md-6">
+                                    <label for="studentId" class="form-label">Student ID</label>
+                                    <input type="text" class="form-control" id="studentId" name="studentId">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="grade" class="form-label">Grade</label>
+                                    <input type="text" class="form-control" id="grade" name="grade">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="emergencyContact" class="form-label">Emergency Contact Name</label>
+                                    <input type="text" class="form-control" id="emergencyContact" name="emergencyContact">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="emergencyPhone" class="form-label">Emergency Phone</label>
+                                    <input type="tel" class="form-control" id="emergencyPhone" name="emergencyPhone">
+                                </div>
+                            </div>
+                            
+                            <!-- Parent Specific Fields -->
+                            <div id="parentFields" style="display: none;">
+                                <div class="col-md-6">
+                                    <label for="occupation" class="form-label">Occupation</label>
+                                    <input type="text" class="form-control" id="occupation" name="occupation">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="company" class="form-label">Company</label>
+                                    <input type="text" class="form-control" id="company" name="company">
+                                </div>
+                            </div>
+                            
+                            <!-- Address Fields -->
+                            <div class="col-12">
+                                <h6 class="mt-3">Address Information</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="street" class="form-label">Street Address</label>
+                                <input type="text" class="form-control" id="street" name="street">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="city" class="form-label">City</label>
+                                <input type="text" class="form-control" id="city" name="city">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="state" class="form-label">State</label>
+                                <input type="text" class="form-control" id="state" name="state">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="zipCode" class="form-label">Zip Code</label>
+                                <input type="text" class="form-control" id="zipCode" name="zipCode">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="country" class="form-label">Country</label>
+                                <input type="text" class="form-control" id="country" name="country" value="USA">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveCustomer()">Save Customer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+        <div id="alertContainer"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentUser = null;
+        let customers = [];
+        let currentPage = 1;
+        let totalCustomers = 0;
+        let totalPages = 0;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+        });
+
+        // Check authentication and load data
+        async function initializePage() {
+            try {
+                await checkAuthStatus();
+                await loadCustomers();
+                await loadCustomerStats();
+                setupEventListeners();
+            } catch (error) {
+                console.error('Failed to initialize page:', error);
+                if (error.message.includes('Authentication')) {
+                    window.location.href = '/admin/login';
+                }
+            }
+        }
+
+        // Check authentication status
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch('/admin/auth/check');
+                const result = await response.json();
+                
+                if (!result.success || !result.data.user) {
+                    throw new Error('Authentication failed');
+                }
+                
+                currentUser = result.data.user;
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = '/admin/login';
+                throw error;
+            }
+        }
+
+        // Load customers from API
+        async function loadCustomers(page = 1, filters = {}) {
+            try {
+                const params = new URLSearchParams({
+                    page: page.toString(),
+                    limit: '10',
+                    userType: 'customer',
+                    ...filters
+                });
+                
+                const response = await fetch(`/api/users/customers?${params}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    customers = result.data.customers || [];
+                    currentPage = result.data.pagination.current;
+                    totalPages = result.data.pagination.pages;
+                    totalCustomers = result.data.pagination.total;
+                    
+                    renderCustomersTable();
+                    updatePagination();
+                } else {
+                    throw new Error(result.message || 'Failed to load customers');
+                }
+            } catch (error) {
+                console.error('Load customers error:', error);
+                showAlert('Failed to load customers. Please try again.', 'danger');
+            }
+        }
+
+        // Load customer statistics
+        async function loadCustomerStats() {
+            try {
+                const response = await fetch('/api/users/stats');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const stats = result.data.customerStats || [];
+                    let regularCount = 0, studentCount = 0, parentCount = 0;
+                    
+                    stats.forEach(stat => {
+                        if (stat._id === 'regular') regularCount = stat.count;
+                        else if (stat._id === 'student') studentCount = stat.count;
+                        else if (stat._id === 'parent') parentCount = stat.count;
+                    });
+                    
+                    document.getElementById('totalCustomers').textContent = regularCount + studentCount + parentCount;
+                    document.getElementById('regularCustomers').textContent = regularCount;
+                    document.getElementById('studentCustomers').textContent = studentCount;
+                    document.getElementById('parentCustomers').textContent = parentCount;
+                }
+            } catch (error) {
+                console.error('Load stats error:', error);
+                // Set default values
+                document.getElementById('totalCustomers').textContent = '0';
+                document.getElementById('regularCustomers').textContent = '0';
+                document.getElementById('studentCustomers').textContent = '0';
+                document.getElementById('parentCustomers').textContent = '0';
+            }
+        }
+
+        // Render customers table
+        function renderCustomersTable() {
+            const tbody = document.getElementById('customersTableBody');
+            tbody.innerHTML = '';
+
+            if (customers.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <div>No customers found</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            customers.forEach(customer => {
+                const row = createCustomerRow(customer);
+                tbody.appendChild(row);
+            });
+        }
+
+        // Create customer table row
+        function createCustomerRow(customer) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div class="d-flex align-items-center">
+                        <img src="${customer.profileImage || `https://ui-avatars.com/api/?name=${customer.firstName}+${customer.lastName}&background=random`}" 
+                             alt="${customer.firstName} ${customer.lastName}" class="customer-avatar me-3">
+                        <div>
+                            <div class="fw-semibold">${customer.firstName} ${customer.lastName}</div>
+                            <div class="text-muted small">${customer.address?.city || 'No location'}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge bg-${getCustomerTypeColor(customer.customerType)} customer-type-badge">
+                        ${customer.customerType}
+                    </span>
+                </td>
+                <td>
+                    <div class="small">
+                        <div><i class="fas fa-envelope me-1"></i>${customer.email}</div>
+                        <div><i class="fas fa-phone me-1"></i>${customer.phone}</div>
+                    </div>
+                </td>
+                <td>
+                    <div class="loyalty-badge">
+                        <i class="fas fa-star me-1"></i>${customer.loyaltyPoints || 0}
+                    </div>
+                </td>
+                <td>
+                    <span class="badge bg-info">${customer.userLevel?.name || 'Bronze'}</span>
+                </td>
+                <td>
+                    <span class="badge bg-${customer.isActive ? 'success' : 'danger'} status-badge">
+                        ${customer.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td>
+                    <div class="small text-muted">
+                        ${new Date(customer.createdAt).toLocaleDateString()}
+                    </div>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewCustomer('${customer._id}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="editCustomer('${customer._id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-${customer.isActive ? 'warning' : 'success'}" 
+                                onclick="toggleCustomerStatus('${customer._id}')">
+                            <i class="fas fa-${customer.isActive ? 'ban' : 'check'}"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteCustomer('${customer._id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            return tr;
+        }
+
+        // Get customer type badge color
+        function getCustomerTypeColor(customerType) {
+            const colors = {
+                'regular': 'primary',
+                'student': 'success',
+                'parent': 'info'
+            };
+            return colors[customerType] || 'secondary';
+        }
+
+        // Update pagination
+        function updatePagination() {
+            const paginationInfo = document.getElementById('paginationInfo');
+            const paginationNav = document.getElementById('paginationNav');
+            
+            paginationInfo.textContent = `Showing ${customers.length} of ${totalCustomers} customers`;
+            
+            if (totalPages <= 1) {
+                paginationNav.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '<ul class="pagination pagination-sm">';
+            
+            // Previous button
+            paginationHTML += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="loadCustomers(${currentPage - 1}); return false;">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+            `;
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    paginationHTML += `
+                        <li class="page-item ${i === currentPage ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="loadCustomers(${i}); return false;">${i}</a>
+                        </li>
+                    `;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    paginationHTML += '<li class="page-item disabled"><a class="page-link">...</a></li>';
+                }
+            }
+
+            // Next button
+            paginationHTML += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="loadCustomers(${currentPage + 1}); return false;">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            `;
+
+            paginationHTML += '</ul>';
+            paginationNav.innerHTML = paginationHTML;
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Search input
+            document.getElementById('searchInput').addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    applyFilters();
+                }
+            });
+
+            // Customer type change
+            document.getElementById('customerType').addEventListener('change', function() {
+                const studentFields = document.getElementById('studentFields');
+                const parentFields = document.getElementById('parentFields');
+                
+                // Hide all specific fields first
+                studentFields.style.display = 'none';
+                parentFields.style.display = 'none';
+                
+                // Show relevant fields
+                if (this.value === 'student') {
+                    studentFields.style.display = 'block';
+                } else if (this.value === 'parent') {
+                    parentFields.style.display = 'block';
+                }
+            });
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const filters = {
+                search: document.getElementById('searchInput').value,
+                customerType: document.getElementById('customerTypeFilter').value,
+                status: document.getElementById('statusFilter').value
+            };
+
+            const minPoints = document.getElementById('loyaltyFilter').value;
+            if (minPoints) {
+                filters.minLoyaltyPoints = minPoints;
+            }
+
+            loadCustomers(1, filters);
+        }
+
+        // Refresh customers
+        async function refreshCustomers() {
+            await loadCustomers(currentPage);
+            await loadCustomerStats();
+            showAlert('Data refreshed successfully', 'success');
+        }
+
+        // Save customer (create)
+        async function saveCustomer() {
+            try {
+                const formData = new FormData(document.getElementById('addCustomerForm'));
+                const customerData = Object.fromEntries(formData);
+
+                // Set user type to customer
+                customerData.userType = 'customer';
+
+                // Validate required fields
+                if (!customerData.firstName || !customerData.lastName || !customerData.email || !customerData.password) {
+                    showAlert('Please fill in all required fields', 'danger');
+                    return;
+                }
+
+                // Email validation
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(customerData.email)) {
+                    showAlert('Please enter a valid email address', 'danger');
+                    return;
+                }
+
+                // Build address object
+                if (customerData.street || customerData.city || customerData.state || customerData.zipCode || customerData.country) {
+                    customerData.address = {
+                        street: customerData.street,
+                        city: customerData.city,
+                        state: customerData.state,
+                        zipCode: customerData.zipCode,
+                        country: customerData.country
+                    };
+                    
+                    // Remove individual address fields
+                    delete customerData.street;
+                    delete customerData.city;
+                    delete customerData.state;
+                    delete customerData.zipCode;
+                    delete customerData.country;
+                }
+
+                // Build student info if applicable
+                if (customerData.customerType === 'student') {
+                    if (customerData.emergencyContact || customerData.emergencyPhone) {
+                        customerData.studentInfo = {
+                            studentId: customerData.studentId,
+                            grade: customerData.grade,
+                            emergencyContact: {
+                                name: customerData.emergencyContact,
+                                phone: customerData.emergencyPhone,
+                                relationship: 'Parent/Guardian'
+                            }
+                        };
+                        
+                        // Remove individual student fields
+                        delete customerData.studentId;
+                        delete customerData.grade;
+                        delete customerData.emergencyContact;
+                        delete customerData.emergencyPhone;
+                    }
+                }
+
+                // Build parent info if applicable
+                if (customerData.customerType === 'parent') {
+                    if (customerData.occupation || customerData.company) {
+                        customerData.parentInfo = {
+                            occupation: customerData.occupation,
+                            company: customerData.company
+                        };
+                        
+                        // Remove individual parent fields
+                        delete customerData.occupation;
+                        delete customerData.company;
+                    }
+                }
+
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(customerData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('Customer created successfully!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('addCustomerModal')).hide();
+                    document.getElementById('addCustomerForm').reset();
+                    await loadCustomers();
+                    await loadCustomerStats();
+                } else {
+                    showAlert(result.message || 'Failed to create customer', 'danger');
+                }
+            } catch (error) {
+                console.error('Save customer error:', error);
+                showAlert('Failed to save customer. Please try again.', 'danger');
+            }
+        }
+
+        // View customer details
+        async function viewCustomer(customerId) {
+            try {
+                const response = await fetch(`/api/users/${customerId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const customer = result.data.user;
+                    // Create a detailed view modal
+                    const modalHTML = `
+                        <div class="modal fade" id="viewCustomerModal" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Customer Details</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>Basic Information</h6>
+                                                <p><strong>Name:</strong> ${customer.firstName} ${customer.lastName}</p>
+                                                <p><strong>Email:</strong> ${customer.email}</p>
+                                                <p><strong>Phone:</strong> ${customer.phone}</p>
+                                                <p><strong>Customer Type:</strong> ${customer.customerType}</p>
+                                                <p><strong>Status:</strong> ${customer.isActive ? 'Active' : 'Inactive'}</p>
+                                                <p><strong>Loyalty Points:</strong> ${customer.loyaltyPoints || 0}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Address Information</h6>
+                                                ${customer.address ? `
+                                                    <p><strong>Street:</strong> ${customer.address.street || 'N/A'}</p>
+                                                    <p><strong>City:</strong> ${customer.address.city || 'N/A'}</p>
+                                                    <p><strong>State:</strong> ${customer.address.state || 'N/A'}</p>
+                                                    <p><strong>Zip:</strong> ${customer.address.zipCode || 'N/A'}</p>
+                                                    <p><strong>Country:</strong> ${customer.address.country || 'N/A'}</p>
+                                                ` : '<p>No address information</p>'}
+                                            </div>
+                                        </div>
+                                        ${customer.studentInfo ? `
+                                            <div class="row mt-3">
+                                                <div class="col-12">
+                                                    <h6>Student Information</h6>
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <p><strong>Student ID:</strong> ${customer.studentInfo.studentId || 'N/A'}</p>
+                                                            <p><strong>Grade:</strong> ${customer.studentInfo.grade || 'N/A'}</p>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <p><strong>Emergency Contact:</strong> ${customer.studentInfo.emergencyContact?.name || 'N/A'}</p>
+                                                            <p><strong>Emergency Phone:</strong> ${customer.studentInfo.emergencyContact?.phone || 'N/A'}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ` : ''}
+                                        ${customer.parentInfo ? `
+                                            <div class="row mt-3">
+                                                <div class="col-12">
+                                                    <h6>Parent Information</h6>
+                                                    <p><strong>Occupation:</strong> ${customer.parentInfo.occupation || 'N/A'}</p>
+                                                    <p><strong>Company:</strong> ${customer.parentInfo.company || 'N/A'}</p>
+                                                </div>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Remove existing modal if any
+                    const existingModal = document.getElementById('viewCustomerModal');
+                    if (existingModal) {
+                        existingModal.remove();
+                    }
+                    
+                    // Add new modal and show it
+                    document.body.insertAdjacentHTML('beforeend', modalHTML);
+                    const modal = new bootstrap.Modal(document.getElementById('viewCustomerModal'));
+                    modal.show();
+                } else {
+                    showAlert(result.message || 'Failed to load customer details', 'danger');
+                }
+            } catch (error) {
+                console.error('View customer error:', error);
+                showAlert('Failed to load customer details', 'danger');
+            }
+        }
+
+        // Edit customer
+        function editCustomer(customerId) {
+            showAlert('Edit functionality coming soon!', 'info');
+        }
+
+        // Toggle customer status
+        async function toggleCustomerStatus(customerId) {
+            try {
+                const response = await fetch(`/api/users/${customerId}/toggle-status`, {
+                    method: 'PATCH'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    await loadCustomers();
+                    await loadCustomerStats();
+                } else {
+                    showAlert(result.message || 'Failed to toggle customer status', 'danger');
+                }
+            } catch (error) {
+                console.error('Toggle status error:', error);
+                showAlert('Failed to toggle customer status', 'danger');
+            }
+        }
+
+        // Delete customer
+        async function deleteCustomer(customerId) {
+            if (!confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/users/${customerId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('Customer deleted successfully', 'success');
+                    await loadCustomers();
+                    await loadCustomerStats();
+                } else {
+                    showAlert(result.message || 'Failed to delete customer', 'danger');
+                }
+            } catch (error) {
+                console.error('Delete customer error:', error);
+                showAlert('Failed to delete customer', 'danger');
+            }
+        }
+
+        // Show alert message
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertId = 'alert-' + Date.now();
+            
+            const alertHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert" id="${alertId}">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+
+        // Periodic auth check (every 5 minutes)
+        setInterval(checkAuthStatus, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

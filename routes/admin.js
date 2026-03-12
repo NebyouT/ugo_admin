@@ -1,61 +1,121 @@
 const express = require('express');
-const { protect } = require('../middleware/auth');
-const {
-  adminLogin,
-  adminLogout,
-  getAdminProfile,
-  updateAdminProfile,
-  changePassword,
-  getDashboardStats
-} = require('../controllers/admin/adminController');
-
 const router = express.Router();
+const { authenticate, adminOnly } = require('../modules/auth/middleware/auth');
+const { webAuthenticate, webAdminOnly } = require('../modules/auth/middleware/webAuth');
+const User = require('../modules/auth/models/User');
 
-// @desc    Admin login page
-// @route   GET /admin
-router.get('/', (req, res) => {
-  res.render('admin/login', { 
-    title: 'Admin Login - UGO System' 
+// Initialize admin user if not exists
+User.createAdminIfNotExists();
+
+// Admin login page
+router.get('/login', (req, res) => {
+  // If user is already logged in, redirect to dashboard
+  if (req.cookies?.adminAuth) {
+    return res.redirect('/admin');
+  }
+  
+  res.render('login', { 
+    title: 'Admin Login - UGO'
   });
 });
 
-// @desc    Admin dashboard page
-// @route   GET /admin/dashboard
-router.get('/dashboard', protect, (req, res) => {
-  res.render('admin/dashboard', { 
-    title: 'Dashboard - UGO Admin', 
-    user: req.user 
+// Admin login API - Use auth module
+router.post('/auth/login', require('../modules/auth/routes/auth'));
+
+// Admin dashboard (protected)
+router.get('/', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/dashboard/index', { 
+    title: 'Admin Dashboard - UGO',
+    user: req.user,
+    currentPath: req.path
   });
 });
 
-// @desc    Admin login API
-// @route   POST /api/admin/login
-// @access  Public
-router.post('/login', adminLogin);
+// User Management page (protected)
+router.get('/users', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/users/index', { 
+    title: 'User Management - UGO',
+    user: req.user,
+    currentPath: req.path
+  });
+});
 
-// @desc    Admin logout API
-// @route   POST /api/admin/logout
-// @access  Private
-router.post('/logout', protect, adminLogout);
+// Vehicles page (protected)
+router.get('/vehicles', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/vehicles/index', { 
+    title: 'Vehicle Management - UGO',
+    user: req.user,
+    currentPath: req.path
+  });
+});
 
-// @desc    Get admin profile API
-// @route   GET /api/admin/me
-// @access  Private
-router.get('/me', protect, getAdminProfile);
+// Trips page (protected)
+router.get('/trips', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/trips/index', { 
+    title: 'Trip Management - UGO',
+    user: req.user,
+    currentPath: req.path
+  });
+});
 
-// @desc    Update admin profile API
-// @route   PUT /api/admin/me
-// @access  Private
-router.put('/me', protect, updateAdminProfile);
+// Parents page (protected)
+router.get('/parents', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/parents/index', { 
+    title: 'Parent Management - UGO',
+    user: req.user,
+    currentPath: req.path
+  });
+});
 
-// @desc    Change password API
-// @route   PUT /api/admin/change-password
-// @access  Private
-router.put('/change-password', protect, changePassword);
+// Students page (protected)
+router.get('/students', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/students/index', { 
+    title: 'Student Management - UGO',
+    user: req.user,
+    currentPath: req.path
+  });
+});
 
-// @desc    Get dashboard statistics API
-// @route   GET /api/admin/dashboard/stats
-// @access  Private
-router.get('/dashboard/stats', protect, getDashboardStats);
+// Drivers page (protected)
+router.get('/drivers', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/drivers/index', { 
+    title: 'Driver Management - UGO',
+    user: req.user,
+    currentPath: req.path
+  });
+});
+
+// Customers page (protected)
+router.get('/customers', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/customers/index', { 
+    title: 'Customer Management - UGO',
+    user: req.user,
+    currentPath: req.path
+  });
+});
+
+// API Documentation page (protected)
+router.get('/api-docs', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/api-docs/index', { 
+    title: 'API Documentation - UGO',
+    user: req.user,
+    currentPath: req.path
+  });
+});
+
+// Settings page (protected)
+router.get('/settings', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/settings/index', { 
+    title: 'Settings - UGO',
+    user: req.user,
+    currentPath: req.path
+  });
+});
+
+// Logout - Use auth module
+router.post('/auth/logout', require('../modules/auth/routes/auth'));
+
+// API routes for authentication
+router.use('/auth', require('../modules/auth/routes/auth'));
 
 module.exports = router;

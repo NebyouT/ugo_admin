@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .auth-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-width: 900px;
+            width: 100%;
+            margin: 20px;
+        }
+        .auth-left {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .auth-right {
+            padding: 60px 40px;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        .user-type-card {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .user-type-card:hover, .user-type-card.selected {
+            border-color: #667eea;
+            background-color: #f8f9ff;
+        }
+        .customer-type-card {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none;
+        }
+        .customer-type-card:hover, .customer-type-card.selected {
+            border-color: #667eea;
+            background-color: #f8f9ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="row g-0">
+                <div class="col-md-5 auth-left">
+                    <div class="feature-icon">
+                        <i class="fas fa-bus"></i>
+                    </div>
+                    <h2 class="mb-4">Welcome to UGO</h2>
+                    <p class="mb-4">Your comprehensive student transportation management system</p>
+                    <div class="features">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <span>Safe & Reliable Transportation</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <span>Real-time Tracking</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <span>Parent-Child Management</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <span>Multi-role Support</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-7 auth-right">
+                    <div class="text-center mb-4">
+                        <h3>Create Account</h3>
+                        <p class="text-muted">Join UGO transportation system</p>
+                    </div>
+
+                    <form id="registrationForm">
+                        <!-- User Type Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">I am a:</label>
+                            <div class="user-type-card" data-type="customer">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user fa-2x me-3 text-primary"></i>
+                                    <div>
+                                        <h6 class="mb-1">Customer</h6>
+                                        <small class="text-muted">Student, Parent, or Regular Customer</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="user-type-card" data-type="driver">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-car fa-2x me-3 text-success"></i>
+                                    <div>
+                                        <h6 class="mb-1">Driver</h6>
+                                        <small class="text-muted">Transportation Provider</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Customer Type Selection (shown when customer is selected) -->
+                        <div class="mb-4" id="customerTypeSection" style="display: none;">
+                            <label class="form-label fw-bold">Customer Type:</label>
+                            <div class="customer-type-card" data-customer-type="regular">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user me-2 text-info"></i>
+                                    <div>
+                                        <h6 class="mb-0">Regular Customer</h6>
+                                        <small class="text-muted">Standard transportation service</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="customer-type-card" data-customer-type="student">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-graduation-cap me-2 text-warning"></i>
+                                    <div>
+                                        <h6 class="mb-0">Student</h6>
+                                        <small class="text-muted">Student requiring transportation</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="customer-type-card" data-customer-type="parent">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-users me-2 text-danger"></i>
+                                    <div>
+                                        <h6 class="mb-0">Parent</h6>
+                                        <small class="text-muted">Parent managing student transportation</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Basic Information -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="firstName" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="firstName" name="firstName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="lastName" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="lastName" name="lastName" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                        </div>
+
+                        <!-- Student Specific Fields -->
+                        <div id="studentFields" style="display: none;">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">Student Information</h6>
+                                    <div class="mb-3">
+                                        <label for="studentId" class="form-label">Student ID (Optional)</label>
+                                        <input type="text" class="form-control" id="studentId" name="studentInfo.studentId">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="school" class="form-label">School</label>
+                                        <input type="text" class="form-control" id="school" name="studentInfo.school">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="grade" class="form-label">Grade</label>
+                                        <input type="text" class="form-control" id="grade" name="studentInfo.grade">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Parent Specific Fields -->
+                        <div id="parentFields" style="display: none;">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">Parent Information</h6>
+                                    <div class="mb-3">
+                                        <label for="occupation" class="form-label">Occupation</label>
+                                        <input type="text" class="form-control" id="occupation" name="parentInfo.occupation">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="company" class="form-label">Company</label>
+                                        <input type="text" class="form-control" id="company" name="parentInfo.company">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Driver Specific Fields -->
+                        <div id="driverFields" style="display: none;">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">Driver Information</h6>
+                                    <div class="mb-3">
+                                        <label for="licenseNumber" class="form-label">License Number</label>
+                                        <input type="text" class="form-control" id="licenseNumber" name="driverInfo.licenseNumber">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="licenseExpiry" class="form-label">License Expiry</label>
+                                        <input type="date" class="form-control" id="licenseExpiry" name="driverInfo.licenseExpiry">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="terms" required>
+                            <label class="form-check-label" for="terms">
+                                I agree to the Terms and Conditions
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 mb-3">
+                            Create Account
+                        </button>
+
+                        <div class="text-center">
+                            <p class="mb-0">Already have an account? <a href="/login">Sign In</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedUserType = null;
+        let selectedCustomerType = null;
+
+        // User type selection
+        document.querySelectorAll('.user-type-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.user-type-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedUserType = this.dataset.type;
+                
+                // Show/hide customer type section
+                const customerTypeSection = document.getElementById('customerTypeSection');
+                if (selectedUserType === 'customer') {
+                    customerTypeSection.style.display = 'block';
+                } else {
+                    customerTypeSection.style.display = 'none';
+                    // Hide all specific fields
+                    document.getElementById('studentFields').style.display = 'none';
+                    document.getElementById('parentFields').style.display = 'none';
+                    document.getElementById('driverFields').style.display = 'none';
+                }
+            });
+        });
+
+        // Customer type selection
+        document.querySelectorAll('.customer-type-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.customer-type-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedCustomerType = this.dataset.customerType;
+                
+                // Hide all specific fields first
+                document.getElementById('studentFields').style.display = 'none';
+                document.getElementById('parentFields').style.display = 'none';
+                document.getElementById('driverFields').style.display = 'none';
+                
+                // Show relevant fields
+                if (selectedCustomerType === 'student') {
+                    document.getElementById('studentFields').style.display = 'block';
+                } else if (selectedCustomerType === 'parent') {
+                    document.getElementById('parentFields').style.display = 'block';
+                }
+            });
+        });
+
+        // Form submission
+        document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!selectedUserType) {
+                alert('Please select a user type');
+                return;
+            }
+            
+            if (selectedUserType === 'customer' && !selectedCustomerType) {
+                alert('Please select a customer type');
+                return;
+            }
+
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            // Add selected types
+            data.userType = selectedUserType;
+            if (selectedUserType === 'customer') {
+                data.customerType = selectedCustomerType;
+            }
+
+            // Password confirmation
+            if (data.password !== data.confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Registration successful! Redirecting to login...');
+                    window.location.href = '/login';
+                } else {
+                    alert('Registration failed: ' + result.message);
+                }
+            } catch (error) {
+                alert('Registration failed: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,360 @@
+<%
+// Navigation items configuration - Add new items here to update the sidebar
+const navItems = [
+    {
+        name: 'Dashboard',
+        icon: 'fas fa-tachometer-alt',
+        href: '/admin',
+        active: currentPath === '/admin' || currentPath === '/admin/'
+    },
+    {
+        name: 'User Management',
+        icon: 'fas fa-users',
+        href: '/admin/users',
+        active: currentPath && currentPath.includes('/admin/users'),
+        children: [
+            {
+                name: 'All Users',
+                icon: 'fas fa-users',
+                href: '/admin/users',
+                active: currentPath === '/admin/users'
+            },
+            {
+                name: 'Customers',
+                icon: 'fas fa-user-friends',
+                href: '/admin/customers',
+                active: currentPath === '/admin/customers'
+            },
+            {
+                name: 'Drivers',
+                icon: 'fas fa-id-card',
+                href: '/admin/drivers',
+                active: currentPath === '/admin/drivers'
+            }
+        ]
+    },
+    {
+        name: 'Vehicles',
+        icon: 'fas fa-car',
+        href: '/admin/vehicles',
+        active: currentPath === '/admin/vehicles'
+    },
+    {
+        name: 'Trips',
+        icon: 'fas fa-route',
+        href: '/admin/trips',
+        active: currentPath === '/admin/trips'
+    },
+    {
+        name: 'API Documentation',
+        icon: 'fas fa-code',
+        href: '/admin/api-docs',
+        active: currentPath === '/admin/api-docs'
+    },
+    {
+        name: 'Settings',
+        icon: 'fas fa-cog',
+        href: '/admin/settings',
+        active: currentPath === '/admin/settings'
+    }
+];
+%>
+
+<style>
+.sidebar {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 250px;
+    z-index: 1000;
+}
+
+.sidebar-header {
+    padding: 2rem 1rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header h3 {
+    font-weight: 700;
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.sidebar-nav {
+    padding: 1rem 0;
+}
+
+.nav-item {
+    margin: 0.25rem 0;
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    border-radius: 0.5rem;
+    margin: 0 1rem;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.15);
+    transform: translateX(5px);
+}
+
+.nav-link i {
+    margin-right: 0.75rem;
+    font-size: 1.1rem;
+}
+
+/* Sub-navigation styles */
+.sub-nav {
+    padding-left: 2rem;
+    margin-top: 0.5rem;
+}
+
+.sub-nav .nav-link {
+    margin: 0.125rem 1rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.sub-nav .nav-link:hover,
+.sub-nav .nav-link.active {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateX(3px);
+}
+
+.sub-nav .nav-link i {
+    font-size: 0.9rem;
+    margin-right: 0.5rem;
+}
+
+.user-profile {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 1rem;
+    margin: 1rem;
+    text-align: center;
+}
+
+.user-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    margin-bottom: 0.5rem;
+}
+
+.logout-btn {
+    background: rgba(220, 53, 69, 0.2);
+    color: white;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.logout-btn:hover {
+    background: rgba(220, 53, 69, 0.3);
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+    
+    .sidebar.show {
+        transform: translateX(0);
+    }
+}
+</style>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <i class="fas fa-bus fa-2x mb-2"></i>
+        <h3>UGO Admin</h3>
+    </div>
+    
+    <div class="user-profile">
+        <img src="https://picsum.photos/seed/admin/60/60.jpg" alt="Admin" class="user-avatar">
+        <div class="text-white">
+            <strong><%= user.firstName %> <%= user.lastName %></strong>
+            <div class="small">Administrator</div>
+        </div>
+        <button class="logout-btn mt-2" onclick="logout()">
+            <i class="fas fa-sign-out-alt me-1"></i>Logout
+        </button>
+    </div>
+    
+    <ul class="nav flex-column sidebar-nav">
+        <% navItems.forEach(item => { %>
+            <li class="nav-item">
+                <% if (item.children && item.children.length > 0) { %>
+                    <!-- Parent item with children -->
+                    <a class="nav-link <%= item.active ? 'active' : '' %>" href="<%= item.href %>" data-bs-toggle="collapse" data-bs-target="#collapse-<%= item.name.replace(/\s+/g, '-') %>">
+                        <i class="<%= item.icon %>"></i><%= item.name %>
+                        <i class="fas fa-chevron-down ms-auto"></i>
+                    </a>
+                    <div class="collapse <%= item.active ? 'show' : '' %>" id="collapse-<%= item.name.replace(/\s+/g, '-') %>">
+                        <ul class="nav flex-column sub-nav">
+                            <% item.children.forEach(child => { %>
+                                <li class="nav-item">
+                                    <a class="nav-link <%= child.active ? 'active' : '' %>" href="<%= child.href %>">
+                                        <i class="<%= child.icon %>"></i><%= child.name %>
+                                    </a>
+                                </li>
+                            <% }); %>
+                        </ul>
+                    </div>
+                <% } else { %>
+                    <!-- Simple item without children -->
+                    <a class="nav-link <%= item.active ? 'active' : '' %>" href="<%= item.href %>">
+                        <i class="<%= item.icon %>"></i><%= item.name %>
+                    </a>
+                <% } %>
+            </li>
+        <% }); %>
+    </ul>
+</div>
+
+<script>
+let currentUser = null;
+
+// Load current user data
+async function loadCurrentUser() {
+    try {
+        const response = await fetch('/admin/auth/check');
+        const result = await response.json();
+        
+        if (result.success && result.data.user) {
+            currentUser = result.data.user;
+            updateUserProfile();
+        }
+    } catch (error) {
+        console.error('Failed to load current user:', error);
+    }
+}
+
+// Update user profile in sidebar
+function updateUserProfile() {
+    if (currentUser) {
+        // Update user name
+        const userNameElements = document.querySelectorAll('.user-profile strong');
+        userNameElements.forEach(element => {
+            element.textContent = `${currentUser.firstName} ${currentUser.lastName}`;
+        });
+
+        // Update user avatar
+        const avatarElements = document.querySelectorAll('.user-avatar');
+        avatarElements.forEach(avatar => {
+            if (currentUser.profileImage) {
+                avatar.src = currentUser.profileImage;
+            } else {
+                // Use initials as fallback
+                const initials = `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase();
+                avatar.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                avatar.style.color = 'white';
+                avatar.style.display = 'flex';
+                avatar.style.alignItems = 'center';
+                avatar.style.justifyContent = 'center';
+                avatar.style.fontWeight = 'bold';
+                avatar.style.fontSize = '1.2rem';
+                avatar.src = ''; // Remove image src
+                avatar.alt = initials;
+                
+                // Create a div with initials if it's an img
+                if (avatar.tagName === 'IMG') {
+                    const div = document.createElement('div');
+                    div.className = 'user-avatar';
+                    div.textContent = initials;
+                    div.style.cssText = avatar.style.cssText;
+                    avatar.parentNode.replaceChild(div, avatar);
+                }
+            }
+        });
+
+        // Update role display
+        const roleElements = document.querySelectorAll('.user-profile .small');
+        roleElements.forEach(element => {
+            if (element.textContent.includes('Administrator') || element.textContent.includes('Admin')) {
+                element.textContent = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
+            }
+        });
+    }
+}
+
+function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+        fetch('/admin/auth/logout', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Clear any stored user data
+                    localStorage.removeItem('currentUser');
+                    window.location.href = '/admin/login';
+                }
+            })
+            .catch(error => {
+                console.error('Logout error:', error);
+                // Force redirect even on error
+                localStorage.removeItem('currentUser');
+                window.location.href = '/admin/login';
+            });
+    }
+}
+
+// Mobile sidebar toggle
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('show');
+}
+
+// Check authentication status periodically
+async function checkAuthStatus() {
+    try {
+        const response = await fetch('/admin/auth/check');
+        const result = await response.json();
+        
+        if (!result.success || !result.data.user) {
+            // User is no longer authenticated, redirect to login
+            window.location.href = '/admin/login';
+        }
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        // Don't redirect on network error, but log it
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadCurrentUser();
+    
+    // Check auth status every 5 minutes
+    setInterval(checkAuthStatus, 5 * 60 * 1000);
+});
+
+// Handle navigation clicks
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('nav-link')) {
+        // Add loading state
+        e.target.style.opacity = '0.7';
+        
+        // Check auth before navigation
+        checkAuthStatus();
+    }
+});
+</script>

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin-left: 250px; /* Space for sidebar */
+        }
+
+        .main-content {
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .page-header {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card.primary { border-left-color: #667eea; }
+        .stat-card.success { border-left-color: #28a745; }
+        .stat-card.warning { border-left-color: #ffc107; }
+        .stat-card.info { border-left-color: #17a2b8; }
+        .stat-card.danger { border-left-color: #dc3545; }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon.primary { background: rgba(102, 126, 234, 0.1); color: #667eea; }
+        .stat-icon.success { background: rgba(40, 167, 69, 0.1); color: #28a745; }
+        .stat-icon.warning { background: rgba(255, 193, 7, 0.1); color: #ffc107; }
+        .stat-icon.info { background: rgba(23, 162, 184, 0.1); color: #17a2b8; }
+        .stat-icon.danger { background: rgba(220, 53, 69, 0.1); color: #dc3545; }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .quick-action-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: var(--card-shadow);
+            height: 100%;
+        }
+
+        .action-btn {
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 0.25rem;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .module-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            transition: all 0.3s ease;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .module-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                margin-left: 0;
+            }
+            
+            .mobile-menu-toggle {
+                display: block;
+            }
+            
+            .main-content {
+                padding: 1rem;
+                padding-top: 4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Component -->
+    <%- include('../components/sidebar', { user: user, currentPath: currentPath }) %>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="page-header">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="h2 mb-0">Dashboard Overview</h1>
+                    <p class="text-muted mb-0">Welcome back, <%= user.firstName %>!</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="text-muted small">
+                        <i class="fas fa-clock me-1"></i>
+                        Last login: <%= new Date().toLocaleString() %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="stat-card primary">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-value">1,234</div>
+                    <div class="stat-label">Total Users</div>
+                    <div class="text-success small mt-2">
+                        <i class="fas fa-arrow-up me-1"></i>+12% from last month
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="stat-card success">
+                    <div class="stat-icon success">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="stat-value">567</div>
+                    <div class="stat-label">Students</div>
+                    <div class="text-success small mt-2">
+                        <i class="fas fa-arrow-up me-1"></i>+8% from last month
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="stat-card warning">
+                    <div class="stat-icon warning">
+                        <i class="fas fa-user-friends"></i>
+                    </div>
+                    <div class="stat-value">89</div>
+                    <div class="stat-label">Parents</div>
+                    <div class="text-warning small mt-2">
+                        <i class="fas fa-minus me-1"></i>0% from last month
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="stat-card info">
+                    <div class="stat-icon info">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="stat-value">25</div>
+                    <div class="stat-label">Drivers</div>
+                    <div class="text-success small mt-2">
+                        <i class="fas fa-arrow-up me-1"></i>+4% from last month
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Module Overview -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h4 class="mb-3">System Modules</h4>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
+                <div class="module-card">
+                    <div class="module-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h6>User Management</h6>
+                    <div class="text-muted small">295 files</div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
+                <div class="module-card">
+                    <div class="module-icon">
+                        <i class="fas fa-route"></i>
+                    </div>
+                    <h6>Trip Management</h6>
+                    <div class="text-muted small">160 files</div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
+                <div class="module-card">
+                    <div class="module-icon">
+                        <i class="fas fa-bus"></i>
+                    </div>
+                    <h6>Vehicle Management</h6>
+                    <div class="text-muted small">84 files</div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
+                <div class="module-card">
+                    <div class="module-icon">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <h6>Business Settings</h6>
+                    <div class="text-muted small">228 files</div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
+                <div class="module-card">
+                    <div class="module-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <h6>Fare Management</h6>
+                    <div class="text-muted small">73 files</div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
+                <div class="module-card">
+                    <div class="module-icon">
+                        <i class="fas fa-map"></i>
+                    </div>
+                    <h6>Zone Management</h6>
+                    <div class="text-muted small">31 files</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="quick-action-card">
+                    <h4 class="mb-4">Quick Actions</h4>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-primary action-btn w-100">
+                                <i class="fas fa-user-plus me-2"></i>Add User
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-success action-btn w-100">
+                                <i class="fas fa-plus me-2"></i>Add Vehicle
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-warning action-btn w-100">
+                                <i class="fas fa-route me-2"></i>Schedule Trip
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-info action-btn w-100">
+                                <i class="fas fa-chart-bar me-2"></i>View Reports
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Authentication state management
+        let currentUser = null;
+
+        // Check authentication status on page load
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch('/admin/auth/check');
+                const result = await response.json();
+                
+                if (result.success && result.data.user) {
+                    currentUser = result.data.user;
+                    updateUserInterface();
+                    loadDashboardData();
+                } else {
+                    // Redirect to login if not authenticated
+                    window.location.href = '/admin/login';
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = '/admin/login';
+            }
+        }
+
+        // Update UI with user data
+        function updateUserInterface() {
+            if (currentUser) {
+                // Update welcome message
+                const welcomeElement = document.querySelector('.page-header h1');
+                if (welcomeElement) {
+                    welcomeElement.innerHTML = 'Welcome back, ' + currentUser.firstName + '!';
+                }
+
+                // Update last login time
+                const lastLoginElements = document.querySelectorAll('.text-muted small');
+                lastLoginElements.forEach(element => {
+                    if (element.textContent.includes('Last login:')) {
+                        const lastLogin = currentUser.lastLogin ? 
+                            new Date(currentUser.lastLogin).toLocaleString() : 
+                            'First time login';
+                        element.innerHTML = '<i class="fas fa-clock me-1"></i>Last login: ' + lastLogin;
+                    }
+                });
+            }
+        }
+
+        // Load dashboard data from API
+        async function loadDashboardData() {
+            try {
+                // Load user statistics
+                await loadUserStats();
+                
+                // Load recent activities
+                await loadRecentActivities();
+                
+                // Load system status
+                await loadSystemStatus();
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+            }
+        }
+
+        // Load user statistics
+        async function loadUserStats() {
+            try {
+                const response = await fetch('/api/users/stats');
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateStatCards(result.data);
+                }
+            } catch (error) {
+                console.error('Failed to load user stats:', error);
+                // Use demo data as fallback
+                updateStatCards(getDemoStats());
+            }
+        }
+
+        // Update statistics cards
+        function updateStatCards(stats) {
+            const statCards = [
+                { selector: '.stat-card.primary .stat-value', value: stats.total || 1234 },
+                { selector: '.stat-card.success .stat-value', value: stats.students || 567 },
+                { selector: '.stat-card.warning .stat-value', value: stats.parents || 89 },
+                { selector: '.stat-card.info .stat-value', value: stats.drivers || 25 }
+            ];
+
+            statCards.forEach(card => {
+                const element = document.querySelector(card.selector);
+                if (element) {
+                    animateValue(element, 0, card.value, 1000);
+                }
+            });
+        }
+
+        // Animate number counting
+        function animateValue(element, start, end, duration) {
+            const range = end - start;
+            const increment = range / (duration / 16);
+            let current = start;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                    element.textContent = end.toLocaleString();
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(current).toLocaleString();
+                }
+            }, 16);
+        }
+
+        // Demo statistics fallback
+        function getDemoStats() {
+            return {
+                total: 1234,
+                students: 567,
+                parents: 89,
+                drivers: 25
+            };
+        }
+
+        // Load recent activities
+        async function loadRecentActivities() {
+            // This would fetch from your API
+            console.log('Loading recent activities...');
+        }
+
+        // Load system status
+        async function loadSystemStatus() {
+            // This would fetch from your API
+            console.log('Loading system status...');
+        }
+
+        // Logout function
+        async function logout() {
+            try {
+                const response = await fetch('/admin/auth/logout', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Clear localStorage
+                    localStorage.removeItem('currentUser');
+                    
+                    // Redirect to login
+                    window.location.href = '/admin/login';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Force redirect even on error
+                window.location.href = '/admin/login';
+            }
+        }
+
+        // Add click handlers for module cards
+        document.querySelectorAll('.module-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const moduleName = this.querySelector('h6').textContent;
+                console.log('Module clicked:', moduleName);
+                
+                // Navigate to appropriate module
+                const moduleRoutes = {
+                    'User Management': '/admin/users',
+                    'Trip Management': '/admin/trips',
+                    'Vehicle Management': '/admin/vehicles',
+                    'Business Settings': '/admin/settings'
+                };
+                
+                const route = moduleRoutes[moduleName];
+                if (route) {
+                    window.location.href = route;
+                }
+            });
+        });
+
+        // Quick action handlers
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const action = this.textContent.trim();
+                console.log('Quick action:', action);
+                
+                // Handle different actions
+                if (action.includes('Add User')) {
+                    window.location.href = '/admin/users?action=add';
+                } else if (action.includes('Add Vehicle')) {
+                    window.location.href = '/admin/vehicles?action=add';
+                } else if (action.includes('Schedule Trip')) {
+                    window.location.href = '/admin/trips?action=schedule';
+                } else if (action.includes('View Reports')) {
+                    window.location.href = '/admin/reports';
+                }
+            });
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthStatus();
+        });
+
+        // Periodic auth check (every 5 minutes)
+        setInterval(checkAuthStatus, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

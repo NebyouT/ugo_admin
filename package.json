@@ -13,9 +13,9 @@
     "student",
     "management",
     "admin",
-    "dashboard",
-    "ethiopia",
-    "dire-dawa"
+    "ride-sharing",
+    "nodejs",
+    "express"
   ],
   "author": "UGO Team",
   "license": "MIT",
@@ -26,7 +26,16 @@
     "dotenv": "^16.3.1",
     "cookie-parser": "^1.4.6",
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^6.10.0",
+    "express-validator": "^7.0.1",
+    "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.7.2",
+    "uuid": "^9.0.1",
+    "moment": "^2.29.4",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
