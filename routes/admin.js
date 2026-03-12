@@ -94,6 +94,15 @@ router.get('/customers', webAuthenticate, webAdminOnly, (req, res) => {
   });
 });
 
+// Authentication Management page (protected)
+router.get('/auth-management', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/auth-management/index', { 
+    title: 'Authentication Management - UGO',
+    user: req.user,
+    currentPath: req.path
+  });
+});
+
 // API Documentation page (protected)
 router.get('/api-docs', webAuthenticate, webAdminOnly, (req, res) => {
   res.render('admin/views/api-docs/index', { 
