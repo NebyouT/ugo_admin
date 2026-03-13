@@ -1,0 +1,294 @@
+/* UGO Landing Page - Odometer Counter Styles */
+
+/* ===== ODOMETER COUNTER ===== */
+.odometer {
+    display: inline-block;
+    vertical-align: middle;
+    position: relative;
+}
+
+.odometer.odometer-auto-theme,
+.odometer.odometer-theme-default {
+    display: inline-block;
+    vertical-align: middle;
+    position: relative;
+}
+
+.odometer.odometer-auto-theme .odometer-digit,
+.odometer.odometer-theme-default .odometer-digit {
+    display: inline-block;
+    vertical-align: middle;
+    position: relative;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #333;
+    line-height: 1;
+    border-radius: 8px;
+    padding: 0 5px;
+    background: #f8f9fa;
+    margin: 0 2px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    min-width: 40px;
+    text-align: center;
+}
+
+.odometer.odometer-auto-theme .odometer-digit .odometer-digit-spacer,
+.odometer.odometer-theme-default .odometer-digit .odometer-digit-spacer {
+    display: inline-block;
+    vertical-align: middle;
+    visibility: hidden;
+}
+
+.odometer.odometer-auto-theme .odometer-digit .odometer-digit-inner,
+.odometer.odometer-theme-default .odometer-digit .odometer-digit-inner {
+    text-align: left;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+
+.odometer.odometer-auto-theme .odometer-digit .odometer-digit-inner .odometer-ribbon,
+.odometer.odometer-theme-default .odometer-digit .odometer-digit-inner .odometer-ribbon {
+    display: block;
+}
+
+.odometer.odometer-auto-theme .odometer-digit .odometer-ribbon-inner,
+.odometer.odometer-theme-default .odometer-digit .odometer-ribbon-inner {
+    display: block;
+    -webkit-backface-visibility: hidden;
+    -moz-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+.odometer.odometer-auto-theme .odometer-digit .odometer-value,
+.odometer.odometer-theme-default .odometer-digit .odometer-value {
+    display: block;
+    -webkit-transform: translateZ(0);
+    -moz-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+.odometer.odometer-auto-theme .odometer-digit .odometer-value.odometer-last-value,
+.odometer.odometer-theme-default .odometer-digit .odometer-value.odometer-last-value {
+    position: absolute;
+}
+
+.odometer.odometer-auto-theme.odometer-animating-up .odometer-ribbon-inner,
+.odometer.odometer-theme-default.odometer-animating-up .odometer-ribbon-inner {
+    -webkit-transition: -webkit-transform 2s;
+    -moz-transition: -moz-transform 2s;
+    -ms-transition: -ms-transform 2s;
+    -o-transition: -o-transform 2s;
+    transition: transform 2s;
+}
+
+.odometer.odometer-auto-theme.odometer-animating-up.odometer-animating .odometer-ribbon-inner,
+.odometer.odometer-theme-default.odometer-animating-up.odometer-animating .odometer-ribbon-inner {
+    -webkit-transform: translateY(-100%);
+    -moz-transform: translateY(-100%);
+    -ms-transform: translateY(-100%);
+    -o-transform: translateY(-100%);
+    transform: translateY(-100%);
+}
+
+.odometer.odometer-auto-theme.odometer-animating-down .odometer-ribbon-inner,
+.odometer.odometer-theme-default.odometer-animating-down .odometer-ribbon-inner {
+    -webkit-transform: translateY(-100%);
+    -moz-transform: translateY(-100%);
+    -ms-transform: translateY(-100%);
+    -o-transform: translateY(-100%);
+    transform: translateY(-100%);
+}
+
+.odometer.odometer-auto-theme.odometer-animating-down.odometer-animating .odometer-ribbon-inner,
+.odometer.odometer-theme-default.odometer-animating-down.odometer-animating .odometer-ribbon-inner {
+    -webkit-transition: -webkit-transform 2s;
+    -moz-transition: -moz-transform 2s;
+    -ms-transition: -ms-transform 2s;
+    -o-transition: -o-transform 2s;
+    transition: transform 2s;
+    -webkit-transform: translateY(0);
+    -moz-transform: translateY(0);
+    -ms-transform: translateY(0);
+    -o-transform: translateY(0);
+    transform: translateY(0);
+}
+
+/* ===== CUSTOM ODOMETER STYLES ===== */
+.odometer-custom {
+    font-family: 'Arial', sans-serif;
+    font-weight: 700;
+    color: #667eea;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.odometer-custom .odometer-digit {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 10px 15px;
+    margin: 0 3px;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    min-width: 50px;
+    font-size: 3rem;
+}
+
+.odometer-custom .odometer-digit .odometer-value {
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+/* ===== ODOMETER FORMATS ===== */
+.odometer-format-mark {
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #667eea;
+    margin: 0 5px;
+}
+
+.odometer-format-mark.odometer-decimal {
+    margin: 0 2px;
+}
+
+.odometer-format-mark.odometer-thousands {
+    font-size: 1.5rem;
+    color: #999;
+}
+
+/* ===== RESPONSIVE ODOMETER ===== */
+@media (max-width: 768px) {
+    .odometer.odometer-auto-theme .odometer-digit,
+    .odometer.odometer-theme-default .odometer-digit {
+        font-size: 2rem;
+        min-width: 35px;
+        padding: 0 3px;
+        margin: 0 1px;
+    }
+    
+    .odometer-custom .odometer-digit {
+        font-size: 2.5rem;
+        padding: 8px 12px;
+        min-width: 40px;
+    }
+    
+    .odometer-format-mark {
+        font-size: 1.5rem;
+    }
+    
+    .odometer-format-mark.odometer-thousands {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .odometer.odometer-auto-theme .odometer-digit,
+    .odometer.odometer-theme-default .odometer-digit {
+        font-size: 1.5rem;
+        min-width: 30px;
+        padding: 0 2px;
+        margin: 0 1px;
+    }
+    
+    .odometer-custom .odometer-digit {
+        font-size: 2rem;
+        padding: 6px 10px;
+        min-width: 35px;
+    }
+    
+    .odometer-format-mark {
+        font-size: 1.2rem;
+    }
+    
+    .odometer-format-mark.odometer-thousands {
+        font-size: 1rem;
+    }
+}
+
+/* ===== ANIMATION SPEEDS ===== */
+.odometer-slow .odometer-ribbon-inner {
+    -webkit-transition-duration: 3s !important;
+    -moz-transition-duration: 3s !important;
+    -ms-transition-duration: 3s !important;
+    -o-transition-duration: 3s !important;
+    transition-duration: 3s !important;
+}
+
+.odometer-fast .odometer-ribbon-inner {
+    -webkit-transition-duration: 0.5s !important;
+    -moz-transition-duration: 0.5s !important;
+    -ms-transition-duration: 0.5s !important;
+    -o-transition-duration: 0.5s !important;
+    transition-duration: 0.5s !important;
+}
+
+/* ===== COLOR VARIATIONS ===== */
+.odometer-success .odometer-digit {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.odometer-warning .odometer-digit {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: white;
+}
+
+.odometer-danger .odometer-digit {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+    color: white;
+}
+
+.odometer-info .odometer-digit {
+    background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+    color: white;
+}
+
+.odometer-dark .odometer-digit {
+    background: linear-gradient(135deg, #333 0%, #555 100%);
+    color: white;
+}
+
+/* ===== EFFECTS ===== */
+.odometer-glow .odometer-digit {
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+}
+
+.odometer-glow.odometer-success .odometer-digit {
+    box-shadow: 0 0 20px rgba(40, 167, 69, 0.5);
+}
+
+.odometer-glow.odometer-warning .odometer-digit {
+    box-shadow: 0 0 20px rgba(255, 193, 7, 0.5);
+}
+
+.odometer-glow.odometer-danger .odometer-digit {
+    box-shadow: 0 0 20px rgba(220, 53, 69, 0.5);
+}
+
+.odometer-glow.odometer-info .odometer-digit {
+    box-shadow: 0 0 20px rgba(23, 162, 184, 0.5);
+}
+
+/* ===== SIZES ===== */
+.odometer-small .odometer-digit {
+    font-size: 1.5rem;
+    min-width: 25px;
+    padding: 5px 8px;
+}
+
+.odometer-large .odometer-digit {
+    font-size: 4rem;
+    min-width: 60px;
+    padding: 15px 20px;
+}
+
+.odometer-extra-large .odometer-digit {
+    font-size: 5rem;
+    min-width: 80px;
+    padding: 20px 25px;
+}

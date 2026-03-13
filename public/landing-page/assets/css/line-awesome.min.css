@@ -1,0 +1,229 @@
+/* UGO Landing Page - Line Awesome Icons */
+
+/* ===== LINE AWESOME ICONS ===== */
+.la {
+    font-family: 'Line Awesome Free' !important;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== SOLID ICONS ===== */
+.la.la-solid {
+    font-weight: 900;
+}
+
+/* ===== REGULAR ICONS ===== */
+.la.la-regular {
+    font-weight: 400;
+}
+
+/* ===== BRAND ICONS ===== */
+.la.la-brands {
+    font-family: 'Line Awesome Brands' !important;
+    font-weight: normal;
+}
+
+/* ===== COMMON ICONS ===== */
+.la-home::before { content: "🏠"; }
+.la-user::before { content: "👤"; }
+.la-users::before { content: "👥"; }
+.la-car::before { content: "🚗"; }
+.la-truck::before { content: "🚚"; }
+.la-bus::before { content: "🚌"; }
+.la-download::before { content: "⬇"; }
+.la-play::before { content: "▶"; }
+.la-apple::before { content: "🍎"; }
+.la-dollar-sign::before { content: "💲"; }
+.la-check::before { content: "✓"; }
+.la-star::before { content: "⭐"; }
+.la-facebook::before { content: "📘"; }
+.la-twitter::before { content: "🐦"; }
+.la-instagram::before { content: "📷"; }
+.la-linkedin::before { content: "💼"; }
+.la-arrow-up::before { content: "↑"; }
+.la-info::before { content: "ℹ"; }
+.la-exclamation::before { content: "⚠"; }
+.la-headset::before { content: "🎧"; }
+.la-envelope::before { content: "✉"; }
+.la-phone::before { content: "📞"; }
+.la-map-marker::before { content: "📍"; }
+.la-clock::before { content: "🕐"; }
+.la-calendar::before { content: "📅"; }
+.la-gear::before { content: "⚙"; }
+.la-search::before { content: "🔍"; }
+.la-shopping-cart::before { content: "🛒"; }
+.la-heart::before { content: "❤"; }
+.la-share::before { content: "📤"; }
+.la-comment::before { content: "💬"; }
+.la-thumbs-up::before { content: "👍"; }
+.la-thumbs-down::before { content: "👎"; }
+.la-eye::before { content: "👁"; }
+.la-eye-slash::before { content: "👁‍🗨"; }
+.la-edit::before { content: "✏"; }
+.la-trash::before { content: "🗑"; }
+.la-plus::before { content: "+"; }
+.la-minus::before { content: "-"; }
+.la-times::before { content: "×"; }
+.la-check-circle::before { content: "✓"; }
+.la-exclamation-circle::before { content: "⚠"; }
+.la-question-circle::before { content: "❓"; }
+.la-info-circle::before { content: "ℹ"; }
+.la-lock::before { content: "🔒"; }
+.la-unlock::before { content: "🔓"; }
+.la-key::before { content: "🔑"; }
+.la-bell::before { content: "🔔"; }
+.la-bookmark::before { content: "🔖"; }
+.la-flag::before { content: "🚩"; }
+.la-tag::before { content: "🏷"; }
+.la-folder::before { content: "📁"; }
+.la-file::before { content: "📄"; }
+.la-image::before { content: "🖼"; }
+.la-video::before { content: "🎥"; }
+.la-music::before { content: "🎵"; }
+.la-play-circle::before { content: "▶"; }
+.la-pause-circle::before { content: "⏸"; }
+.la-stop-circle::before { content: "⏹"; }
+.la-volume-up::before { content: "🔊"; }
+.la-volume-down::before { content: "🔉"; }
+.la-volume-off::before { content: "🔇"; }
+.la-cog::before { content: "⚙"; }
+.la-wrench::before { content: "🔧"; }
+.la-hammer::before { content: "🔨"; }
+.la-tools::before { content: "🛠"; }
+.la-shield::before { content: "🛡"; }
+.la-umbrella::before { content: "☂"; }
+.la-tint::before { content: "💧"; }
+.la-sun::before { content: "☀"; }
+.la-moon::before { content: "🌙"; }
+.la-cloud::before { content: "☁"; }
+.la-cloud-sun::before { content: "⛅"; }
+.la-cloud-rain::before { content: "🌧"; }
+.la-snowflake::before { content: "❄"; }
+.la-fire::before { content: "🔥"; }
+.la-bolt::before { content: "⚡"; }
+.la-magnet::before { content: "🧲"; }
+.la-rocket::before { content: "🚀"; }
+.la-plane::before { content: "✈"; }
+.la-ship::before { content: "🚢"; }
+.la-train::before { content: "🚂"; }
+.la-bicycle::before { content: "🚲"; }
+.la-walking::before { content: "🚶"; }
+.la-running::before { content: "🏃"; }
+.la-hiking::before { content: "🥾"; }
+.la-swimming::before { content: "🏊"; }
+.la-golf::before { content: "⛳"; }
+.la-basketball::before { content: "🏀"; }
+.la-football::before { content: "🏈"; }
+.la-baseball::before { content: "⚾"; }
+.la-tennis::before { content: "🎾"; }
+.la-ping-pong::before { content: "🏓"; }
+.la-bowling::before { content: "🎳"; }
+.la-dice::before { content: "🎲"; }
+.la-chess::before { content: "♟"; }
+.la-gamepad::before { content: "🎮"; }
+.la-puzzle-piece::before { content: "🧩"; }
+.la-magic::before { content: "🪄"; }
+.la-wand-magic::before { content: "🪄"; }
+.la-hat-wizard::before { content: "🎩"; }
+.la-crown::before { content: "👑"; }
+.la-gem::before { content: "💎"; }
+.la-coins::before { content: "🪙"; }
+.la-money-bill::before { content: "💵"; }
+.la-money-bill-wave::before { content: "💵"; }
+.la-credit-card::before { content: "💳"; }
+.la-wallet::before { content: "👛"; }
+.la-piggy-bank::before { content: "🐷"; }
+.la-gift::before { content: "🎁"; }
+.la-birthday-cake::before { content: "🎂"; }
+.la-champagne-glasses::before { content: "🥂"; }
+.la-glass-cheers::before { content: "🥂"; }
+.la-heart-broken::before { content: "💔"; }
+.la-heart-pulse::before { content: "💗"; }
+.la-kiss::before { content: "💋"; }
+.la-hand-holding-heart::before { content: "💝"; }
+.la-hand-hands::before { content: "🤝"; }
+.la-thumbs-up::before { content: "👍"; }
+.la-thumbs-down::before { content: "👎"; }
+.la-point-up::before { content: "👆"; }
+.la-point-right::before { content: "👉"; }
+.la-point-down::before { content: "👇"; }
+.la-point-left::before { content: "👈"; }
+.la-hand-pointer::before { content: "👉"; }
+.la-hand-peace::before { content: "✌"; }
+.la-hand-rock::before { content: "✊"; }
+.la-hand-scissors::before { content: "✌"; }
+.la-hand-paper::before { content: "✋"; }
+.la-hand-spock::before { content: "🖖"; }
+.la-vulcan::before { content: "🖖"; }
+.la-sign-language::before { content: "🤟"; }
+.la-american-sign-language-interpreting::before { content: "🤟"; }
+.la-deaf::before { content: "🧏"; }
+.la-assistive-listening-systems::before { content: "🦻"; }
+.la-universal-access::before { content: "♿"; }
+.la-wheelchair::before { content: "♿"; }
+.la-blind::before { content: "👨‍🦯"; }
+.la-service-dog::before { content: "🐕‍🦺"; }
+.la-guide-dog::before { content: "🐕‍🦺"; }
+.la-question-circle::before { content: "❓"; }
+.la-info-circle::before { content: "ℹ"; }
+.la-exclamation-circle::before { content: "⚠"; }
+.la-exclamation-triangle::before { content: "⚠"; }
+.la-times-circle::before { content: "❌"; }
+.la-check-circle::before { content: "✅"; }
+.la-times::before { content: "❌"; }
+.la-check::before { content: "✅"; }
+.la-arrow-left::before { content: "←"; }
+.la-arrow-right::before { content: "→"; }
+.la-arrow-up::before { content: "↑"; }
+.la-arrow-down::before { content: "↓"; }
+.la-angle-left::before { content: "‹"; }
+.la-angle-right::before { content: "›"; }
+.la-angle-up::before { content: "↑"; }
+.la-angle-down::before { content: "↓"; }
+.la-angle-double-left::before { content: "«"; }
+.la-angle-double-right::before { content: "»"; }
+.la-angle-double-up::before { content: "⇑"; }
+.la-angle-double-down::before { content: "⇓"; }
+.la-caret-left::before { content: "‹"; }
+.la-caret-right::before { content: "›"; }
+.la-caret-up::before { content: "↑"; }
+.la-caret-down::before { content: "↓"; }
+.la-chevron-left::before { content: "‹"; }
+.la-chevron-right::before { content: "›"; }
+.la-chevron-up::before { content: "↑"; }
+.la-chevron-down::before { content: "↓"; }
+.la-ellipsis-h::before { content: "…"; }
+.la-ellipsis-v::before { content: "⋮"; }
+.la-minus::before { content: "-"; }
+.la-plus::before { content: "+"; }
+.la-times::before { content: "×"; }
+.la-divide::before { content: "÷"; }
+.la-equals::before { content: "="; }
+.la-not-equal::before { content: "≠"; }
+.la-less-than::before { content: "<"; }
+.la-greater-than::before { content: ">"; }
+.la-less-than-equal::before { content: "≤"; }
+.la-greater-than-equal::before { content: "≥"; }
+.la-infinity::before { content: "∞"; }
+.la-percent::before { content: "%"; }
+.la-hashtag::before { content: "#"; }
+.la-ampersand::before { content: "&"; }
+.la-at::before { content: "@"; }
+.la-asterisk::before { content: "*"; }
+.la-backslash::before { content: "\\"; }
+.la-barcode::before { content: "📊"; }
+.la-qrcode::before { content: "📱"; }
+.la-slash::before { content: "/"; }
+.la-underscore::before { content: "_"; }
+.la-pipe::before { content: "|"; }
+.la-bracket::before { content: "["; }
+.la-bracket-close::before { content: "]"; }
+.la-brace::before { content: "{"; }
+.la-brace-close::before { content: "}"; }
+.la-parenthesis::before { content: "("; }
+.la-parenthesis-close::before { content: ")"; }

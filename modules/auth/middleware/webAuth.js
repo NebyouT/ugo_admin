@@ -3,13 +3,14 @@ const jwt = require('jsonwebtoken');
 const User = require('../../user-management/models/User');
 
 // Web authentication middleware - redirects to login for web routes
+const cookieClearOpts = { path: '/', httpOnly: true };
+
 const webAuthenticate = async (req, res, next) => {
     try {
         // Get token from cookie
         const token = req.cookies?.adminAuth;
 
         if (!token) {
-            // Redirect to login page for web routes
             return res.redirect('/admin/login');
         }
 
@@ -20,34 +21,21 @@ const webAuthenticate = async (req, res, next) => {
         const user = await User.findById(decoded.id).select('-password');
 
         if (!user) {
-            // Clear invalid token and redirect
-            res.clearCookie('adminAuth');
+            res.clearCookie('adminAuth', cookieClearOpts);
             return res.redirect('/admin/login');
         }
 
-        // Check if user is active
         if (!user.isActive) {
-            // Clear token and redirect
-            res.clearCookie('adminAuth');
+            res.clearCookie('adminAuth', cookieClearOpts);
             return res.redirect('/admin/login');
         }
 
-        // Add user to request object
         req.user = user;
         next();
 
     } catch (error) {
         console.error('Web authentication error:', error.message);
-        
-        // Clear invalid token and redirect to login
-        res.clearCookie('adminAuth');
-        
-        if (error.name === 'TokenExpiredError') {
-            return res.redirect('/admin/login');
-        } else if (error.name === 'JsonWebTokenError') {
-            return res.redirect('/admin/login');
-        }
-        
+        res.clearCookie('adminAuth', cookieClearOpts);
         return res.redirect('/admin/login');
     }
 };

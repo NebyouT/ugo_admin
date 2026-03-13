@@ -1,0 +1,7 @@
+<!-- UGO Logo SVG -->
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="20" cy="20" r="20" fill="#667eea"/>
+  <path d="M20 8L28 14V26L20 32L12 26V14L20 8Z" fill="white"/>
+  <path d="M20 12L24 15V25L20 28L16 25V15L20 12Z" fill="#667eea"/>
+  <circle cx="20" cy="20" r="3" fill="white"/>
+</svg>

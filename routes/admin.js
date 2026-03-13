@@ -32,10 +32,11 @@ router.post('/auth/login', async (req, res) => {
     }
 
     const token = user.generateAuthToken();
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('adminAuth', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: isProduction,
+      sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/'
     });
