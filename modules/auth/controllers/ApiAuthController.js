@@ -1,11 +1,36 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../../user-management/models/User');
 const DriverDetail = require('../../user-management/models/DriverDetail');
 const { generateOTP, verifyOTP, generatePhoneMask } = require('../utils/otpUtils');
 
+// Helper: generate access token
+function generateAccessToken(user) {
+    return jwt.sign(
+        { id: user._id, phone: user.phone, userType: user.userType || user.role },
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: '1h' }
+    );
+}
+
+// Helper: generate refresh token
+function generateRefreshToken(user) {
+    return jwt.sign(
+        { id: user._id, phone: user.phone },
+        process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'your-refresh-secret',
+        { expiresIn: '7d' }
+    );
+}
+
+// Helper: map userType for API responses
+function mapUserType(user) {
+    if (user.userType === 'customer' && user.customerType === 'parent') return 'parent';
+    if (user.userType === 'customer' && user.customerType === 'student') return 'student';
+    return user.userType; // driver, admin, employee, customer
+}
+
 class ApiAuthController {
-    // Register new user
+    // 1. POST /auth/register - Register new user
     static async register(req, res) {
         try {
             const { user_type, full_name, phone, password, confirm_password, device_info } = req.body;
@@ -31,13 +56,12 @@ class ApiAuthController {
                 });
             }
 
-            // Password validation
             if (password.length < 8) {
                 return res.status(400).json({
                     success: false,
                     error: {
                         code: 'WEAK_PASSWORD',
-                        message: 'Password must be at least 8 characters long'
+                        message: 'Password must be at least 8 characters with numbers and letters'
                     }
                 });
             }
@@ -54,33 +78,70 @@ class ApiAuthController {
                 });
             }
 
-            // Hash password
-            const hashedPassword = await bcrypt.hash(password, 12);
+            // Parse name
+            const nameParts = full_name.trim().split(/\s+/);
+            const firstName = nameParts[0] || full_name;
+            const lastName = nameParts.slice(1).join(' ') || '';
 
-            // Create user based on type
-            let userData = {
-                user_type,
-                firstName: full_name.split(' ')[0] || full_name,
-                lastName: full_name.split(' ').slice(1).join(' ') || '',
+            // Build user data
+            const userData = {
+                firstName,
+                lastName,
                 phone,
-                password: hashedPassword,
+                email: `${phone}@ugo.temp`, // Auto-generate email from phone (phone is primary identifier)
+                password, // Will be hashed by pre-save middleware
                 isActive: false, // Requires OTP verification
-                deviceInfo,
-                otp: generateOTP(),
-                otpExpiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
-                createdAt: new Date(),
-                updatedAt: new Date()
+                status: 'pending',
+                otp: generateOTP(), // Currently hardcoded to 123456
+                otpExpiresAt: new Date(Date.now() + 5 * 60 * 1000),
+                otpPurpose: 'registration',
+                otpAttempts: 0,
+                lastOTPSent: new Date()
             };
+
+            // Set user type and customer type
+            if (user_type === 'parent') {
+                userData.userType = 'customer';
+                userData.customerType = 'parent';
+                userData.role = 'customer';
+            } else if (user_type === 'driver') {
+                userData.userType = 'driver';
+                userData.role = 'driver';
+            } else {
+                userData.userType = 'customer';
+                userData.customerType = 'regular';
+                userData.role = 'customer';
+            }
+
+            // Device info
+            if (device_info) {
+                userData.deviceInfo = {
+                    device_id: device_info.device_id,
+                    device_type: device_info.device_type || 'android',
+                    fcm_token: device_info.fcm_token
+                };
+                if (device_info.fcm_token) {
+                    userData.fcmToken = device_info.fcm_token;
+                }
+            }
 
             // Add driver-specific fields
             if (user_type === 'driver') {
                 const { date_of_birth, address, license_number } = req.body;
-                userData.dateOfBirth = date_of_birth ? new Date(date_of_birth) : null;
-                userData.address = address || {};
-                userData.driverInfo = {
-                    licenseNumber: license_number,
-                    isVerified: false
-                };
+                if (date_of_birth) userData.dateOfBirth = new Date(date_of_birth);
+                if (address) {
+                    userData.address = {
+                        city: address.city,
+                        street: address.area || address.address_line,
+                        state: address.area
+                    };
+                }
+                if (license_number) {
+                    userData.driverInfo = {
+                        licenseNumber: license_number,
+                        isVerified: false
+                    };
+                }
             }
 
             const user = new User(userData);
@@ -96,7 +157,7 @@ class ApiAuthController {
                 await driverDetail.save();
             }
 
-            // Generate response data
+            // Build response
             const responseData = {
                 user_id: user._id,
                 phone: user.phone,
@@ -107,6 +168,9 @@ class ApiAuthController {
             if (user_type === 'driver') {
                 responseData.next_step = 'vehicle_registration';
             }
+
+            // TODO: Send OTP via Afro SMS. For now OTP is always 123456.
+            console.log(`[OTP] Registration OTP for ${phone}: ${userData.otp}`);
 
             res.status(201).json({
                 success: true,
@@ -126,7 +190,7 @@ class ApiAuthController {
         }
     }
 
-    // Login user
+    // 2. POST /auth/login - Login user
     static async login(req, res) {
         try {
             const { phone, password, device_info } = req.body;
@@ -141,8 +205,8 @@ class ApiAuthController {
                 });
             }
 
-            // Find user by phone
-            const user = await User.findOne({ phone });
+            // Find user by phone with password
+            const user = await User.findOne({ phone }).select('+password');
             if (!user) {
                 return res.status(401).json({
                     success: false,
@@ -165,7 +229,7 @@ class ApiAuthController {
             }
 
             // Check if account is verified
-            if (!user.isActive) {
+            if (!user.isActive && user.status === 'pending') {
                 return res.status(401).json({
                     success: false,
                     error: {
@@ -179,9 +243,27 @@ class ApiAuthController {
                 });
             }
 
+            // Check if account is locked
+            if (user.lockUntil && user.lockUntil > Date.now()) {
+                return res.status(423).json({
+                    success: false,
+                    error: {
+                        code: 'ACCOUNT_LOCKED',
+                        message: 'Account temporarily locked due to multiple failed attempts. Try again later.'
+                    }
+                });
+            }
+
             // Verify password
             const isPasswordValid = await bcrypt.compare(password, user.password);
             if (!isPasswordValid) {
+                // Increment failed attempts
+                user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+                if (user.failedLoginAttempts >= 5) {
+                    user.lockUntil = new Date(Date.now() + 2 * 60 * 60 * 1000);
+                }
+                await user.save();
+
                 return res.status(401).json({
                     success: false,
                     error: {
@@ -191,52 +273,43 @@ class ApiAuthController {
                 });
             }
 
-            // Update last login and device info
+            // Reset failed attempts on success
+            user.failedLoginAttempts = 0;
+            user.lockUntil = null;
             user.lastLoginAt = new Date();
-            user.deviceInfo = device_info;
+
+            // Update device info
+            if (device_info) {
+                user.deviceInfo = {
+                    device_id: device_info.device_id,
+                    device_type: device_info.device_type || 'android',
+                    fcm_token: device_info.fcm_token
+                };
+                if (device_info.fcm_token) {
+                    user.fcmToken = device_info.fcm_token;
+                }
+            }
             await user.save();
 
             // Generate tokens
-            const accessToken = jwt.sign(
-                { id: user._id, phone: user.phone, userType: user.user_type },
-                process.env.JWT_SECRET || 'your-secret-key',
-                { expiresIn: '1h' }
-            );
+            const accessToken = generateAccessToken(user);
+            const refreshToken = generateRefreshToken(user);
 
-            const refreshToken = jwt.sign(
-                { id: user._id, phone: user.phone },
-                process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
-                { expiresIn: '7d' }
-            );
+            // Store refresh token
+            user.refreshToken = refreshToken;
+            await user.save();
 
-            // Prepare user data for response
+            // Build response
+            const userType = mapUserType(user);
             const userResponse = {
                 id: user._id,
-                full_name: `${user.firstName} ${user.lastName}`,
+                full_name: `${user.firstName} ${user.lastName}`.trim(),
                 phone: user.phone,
-                user_type: user.user_type,
+                user_type: userType,
                 photo: user.profileImage || null,
-                status: user.status,
+                status: user.status || 'active',
                 created_at: user.createdAt
             };
-
-            // Add driver-specific data
-            if (user.user_type === 'driver') {
-                const driverDetail = await DriverDetail.findOne({ user: user._id });
-                userResponse.rating = driverDetail?.averageRating || 0;
-                userResponse.total_rides = driverDetail?.rideCount || 0;
-                userResponse.is_online = driverDetail?.isOnline || false;
-                userResponse.date_of_birth = user.dateOfBirth;
-                userResponse.license_number = user.driverInfo?.licenseNumber;
-                userResponse.address = user.address;
-            }
-
-            // Add parent-specific data
-            if (user.user_type === 'parent') {
-                userResponse.children_count = 2; // TODO: Get from database
-                userResponse.active_subscriptions = 1;
-                userResponse.has_pending_payments = false;
-            }
 
             const responseData = {
                 user: userResponse,
@@ -248,11 +321,29 @@ class ApiAuthController {
                 }
             };
 
-            // Add additional data based on user type
-            if (user.user_type === 'driver') {
-                responseData.assigned_groups = 2;
-                responseData.today_rides = 8;
-                responseData.pending_earnings = 850;
+            // Add driver-specific data
+            if (user.userType === 'driver') {
+                const driverDetail = await DriverDetail.findOne({ user: user._id });
+                userResponse.rating = driverDetail?.averageRating || 0;
+                userResponse.total_rides = driverDetail?.rideCount || 0;
+                userResponse.is_online = driverDetail?.isOnline || false;
+
+                responseData.vehicle = driverDetail?.currentVehicle ? {
+                    id: driverDetail.currentVehicle,
+                    type: 'Bajaj',
+                    plate: '3-12345',
+                    color: 'Blue'
+                } : null;
+                responseData.assigned_groups = 0;
+                responseData.today_rides = 0;
+                responseData.pending_earnings = 0;
+            }
+
+            // Add parent-specific data
+            if (userType === 'parent') {
+                responseData.children_count = 0; // TODO: count from ParentChildRelationship
+                responseData.active_subscriptions = 0;
+                responseData.has_pending_payments = false;
             }
 
             res.json({
@@ -273,16 +364,28 @@ class ApiAuthController {
         }
     }
 
-    // Logout user
+    // 3. POST /auth/logout - Logout user
     static async logout(req, res) {
         try {
             const { device_id, logout_all_devices } = req.body;
-            
-            // In a real implementation, you would:
-            // 1. Invalidate the specific device token
-            // 2. If logout_all_devices, invalidate all tokens for the user
-            // 3. Update user's device status
-            
+            const user = req.user;
+
+            if (user) {
+                if (logout_all_devices) {
+                    user.refreshToken = null;
+                    user.fcmToken = null;
+                    user.deviceInfo = {};
+                } else {
+                    // Clear current device token
+                    if (device_id && user.deviceInfo?.device_id === device_id) {
+                        user.deviceInfo = {};
+                        user.fcmToken = null;
+                    }
+                    user.refreshToken = null;
+                }
+                await user.save();
+            }
+
             res.json({
                 success: true,
                 message: 'Logged out successfully'
@@ -300,7 +403,7 @@ class ApiAuthController {
         }
     }
 
-    // Request password reset
+    // 4. POST /auth/forgot-password - Request Password Reset
     static async forgotPassword(req, res) {
         try {
             const { phone } = req.body;
@@ -331,7 +434,12 @@ class ApiAuthController {
             user.otp = otp;
             user.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
             user.otpPurpose = 'password_reset';
+            user.otpAttempts = 0;
+            user.lastOTPSent = new Date();
             await user.save();
+
+            // TODO: Send OTP via Afro SMS
+            console.log(`[OTP] Password reset OTP for ${phone}: ${otp}`);
 
             res.json({
                 success: true,
@@ -355,7 +463,7 @@ class ApiAuthController {
         }
     }
 
-    // Reset password
+    // 5. POST /auth/reset-password - Reset Password
     static async resetPassword(req, res) {
         try {
             const { phone, otp, new_password, confirm_password } = req.body;
@@ -380,18 +488,17 @@ class ApiAuthController {
                 });
             }
 
-            // Password validation
             if (new_password.length < 8) {
                 return res.status(400).json({
                     success: false,
                     error: {
                         code: 'WEAK_PASSWORD',
-                        message: 'Password must be at least 8 characters long'
+                        message: 'Password must be at least 8 characters with numbers and letters'
                     }
                 });
             }
 
-            const user = await User.findOne({ phone });
+            const user = await User.findOne({ phone }).select('+password');
             if (!user) {
                 return res.status(404).json({
                     success: false,
@@ -403,7 +510,7 @@ class ApiAuthController {
             }
 
             // Verify OTP
-            if (!verifyOTP(user.otp, otp) || user.otpExpiresAt < new Date()) {
+            if (!verifyOTP(user.otp, otp) || !user.otpExpiresAt || user.otpExpiresAt < new Date()) {
                 return res.status(400).json({
                     success: false,
                     error: {
@@ -413,12 +520,12 @@ class ApiAuthController {
                 });
             }
 
-            // Hash new password
-            const hashedPassword = await bcrypt.hash(new_password, 12);
-            user.password = hashedPassword;
+            // Update password (pre-save hook will hash it)
+            user.password = new_password;
             user.otp = null;
             user.otpExpiresAt = null;
             user.otpPurpose = null;
+            user.otpAttempts = 0;
             await user.save();
 
             res.json({
@@ -438,7 +545,7 @@ class ApiAuthController {
         }
     }
 
-    // Verify OTP
+    // 6. POST /auth/verify-otp - Verify OTP Code
     static async verifyOTP(req, res) {
         try {
             const { phone, otp, purpose } = req.body;
@@ -465,16 +572,14 @@ class ApiAuthController {
             }
 
             // Check OTP validity
-            if (!verifyOTP(user.otp, otp) || user.otpExpiresAt < new Date()) {
-                // Decrease attempts
+            if (!verifyOTP(user.otp, otp) || !user.otpExpiresAt || user.otpExpiresAt < new Date()) {
                 user.otpAttempts = (user.otpAttempts || 0) + 1;
-                
+
                 if (user.otpAttempts >= 3) {
-                    // Clear OTP and require new one
                     user.otp = null;
                     user.otpExpiresAt = null;
                     await user.save();
-                    
+
                     return res.status(400).json({
                         success: false,
                         error: {
@@ -485,7 +590,7 @@ class ApiAuthController {
                 }
 
                 await user.save();
-                
+
                 return res.status(400).json({
                     success: false,
                     error: {
@@ -503,30 +608,28 @@ class ApiAuthController {
             user.otpExpiresAt = null;
             user.otpAttempts = 0;
             user.isActive = true;
+            user.status = 'active';
+            user.isPhoneVerified = true;
+            user.phoneVerifiedAt = new Date();
             user.verifiedAt = new Date();
             await user.save();
 
             // Generate tokens
-            const accessToken = jwt.sign(
-                { id: user._id, phone: user.phone, userType: user.user_type },
-                process.env.JWT_SECRET || 'your-secret-key',
-                { expiresIn: '1h' }
-            );
+            const accessToken = generateAccessToken(user);
+            const refreshToken = generateRefreshToken(user);
 
-            const refreshToken = jwt.sign(
-                { id: user._id, phone: user.phone },
-                process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
-                { expiresIn: '7d' }
-            );
+            // Store refresh token
+            user.refreshToken = refreshToken;
+            await user.save();
 
-            // Prepare user data
+            // Build response
+            const userType = mapUserType(user);
             const userResponse = {
                 id: user._id,
-                full_name: `${user.firstName} ${user.lastName}`,
+                full_name: `${user.firstName} ${user.lastName}`.trim(),
                 phone: user.phone,
-                user_type: user.user_type,
-                status: user.status,
-                created_at: user.createdAt
+                user_type: userType,
+                status: user.status
             };
 
             const responseData = {
@@ -539,11 +642,11 @@ class ApiAuthController {
                 }
             };
 
-            // Add next step based on user type and purpose
-            if (purpose === 'registration') {
-                if (user.user_type === 'parent') {
+            // Add next step based on user type
+            if (purpose === 'registration' || user.verifiedAt) {
+                if (userType === 'parent') {
                     responseData.next_step = 'add_child';
-                } else if (user.user_type === 'driver') {
+                } else if (userType === 'driver') {
                     responseData.next_step = 'vehicle_registration';
                     userResponse.status = 'pending';
                 }
@@ -567,7 +670,7 @@ class ApiAuthController {
         }
     }
 
-    // Refresh token
+    // 7. POST /auth/refresh-token - Refresh Access Token
     static async refreshToken(req, res) {
         try {
             const { refresh_token } = req.body;
@@ -583,10 +686,21 @@ class ApiAuthController {
             }
 
             // Verify refresh token
-            const decoded = jwt.verify(refresh_token, process.env.JWT_REFRESH_SECRET || 'your-refresh-secret');
-            
+            let decoded;
+            try {
+                decoded = jwt.verify(refresh_token, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'your-refresh-secret');
+            } catch (err) {
+                return res.status(401).json({
+                    success: false,
+                    error: {
+                        code: 'INVALID_REFRESH_TOKEN',
+                        message: 'Refresh token is invalid or expired. Please login again.'
+                    }
+                });
+            }
+
             const user = await User.findById(decoded.id);
-            if (!user) {
+            if (!user || !user.isActive) {
                 return res.status(401).json({
                     success: false,
                     error: {
@@ -597,17 +711,12 @@ class ApiAuthController {
             }
 
             // Generate new tokens
-            const newAccessToken = jwt.sign(
-                { id: user._id, phone: user.phone, userType: user.user_type },
-                process.env.JWT_SECRET || 'your-secret-key',
-                { expiresIn: '1h' }
-            );
+            const newAccessToken = generateAccessToken(user);
+            const newRefreshToken = generateRefreshToken(user);
 
-            const newRefreshToken = jwt.sign(
-                { id: user._id, phone: user.phone },
-                process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
-                { expiresIn: '7d' }
-            );
+            // Store new refresh token
+            user.refreshToken = newRefreshToken;
+            await user.save();
 
             res.json({
                 success: true,
@@ -631,10 +740,10 @@ class ApiAuthController {
         }
     }
 
-    // Get current user
+    // 8. GET /auth/me - Get Current User
     static async getCurrentUser(req, res) {
         try {
-            const user = req.user; // Assuming middleware sets this
+            const user = req.user;
 
             if (!user) {
                 return res.status(401).json({
@@ -646,20 +755,24 @@ class ApiAuthController {
                 });
             }
 
-            // Prepare user data
+            const userType = mapUserType(user);
             const userResponse = {
                 id: user._id,
-                full_name: `${user.firstName} ${user.lastName}`,
+                full_name: `${user.firstName} ${user.lastName}`.trim(),
                 phone: user.phone,
-                user_type: user.user_type,
+                user_type: userType,
                 photo: user.profileImage || null,
-                status: user.status,
+                status: user.status || 'active',
                 created_at: user.createdAt,
                 updated_at: user.updatedAt
             };
 
-            // Add driver-specific data
-            if (user.user_type === 'driver') {
+            const responseData = {
+                user: userResponse,
+                summary: {}
+            };
+
+            if (user.userType === 'driver') {
                 const driverDetail = await DriverDetail.findOne({ user: user._id });
                 userResponse.date_of_birth = user.dateOfBirth;
                 userResponse.license_number = user.driverInfo?.licenseNumber;
@@ -667,52 +780,37 @@ class ApiAuthController {
                 userResponse.is_online = driverDetail?.isOnline || false;
                 userResponse.rating = driverDetail?.averageRating || 0;
                 userResponse.total_rides = driverDetail?.rideCount || 0;
-                userResponse.created_at = user.createdAt;
-                userResponse.updated_at = user.updatedAt;
-            }
 
-            const responseData = {
-                user: userResponse,
-                summary: {}
-            };
-
-            // Add summary data based on user type
-            if (user.user_type === 'parent') {
-                responseData.summary = {
-                    children_count: 2,
-                    active_subscriptions: 1,
-                    active_packages: 1,
-                    pending_payments: 0,
-                    total_rides: 45
-                };
-            } else if (user.user_type === 'driver') {
-                const driverDetail = await DriverDetail.findOne({ user: user._id });
-                responseData.vehicle = {
-                    id: 'vehicle_001',
+                responseData.vehicle = driverDetail?.currentVehicle ? {
+                    id: driverDetail.currentVehicle,
                     type: 'Bajaj',
                     plate: '3-12345',
                     color: 'Blue',
-                    capacity: 8
-                };
+                    capacity: 8,
+                    photo: null
+                } : null;
+
                 responseData.documents = {
-                    license: {
-                        status: 'verified',
-                        expires_at: '2028-05-15'
-                    },
-                    id_card: {
-                        status: 'verified'
-                    },
-                    vehicle_registration: {
-                        status: 'verified'
-                    }
+                    license: { status: user.driverInfo?.isVerified ? 'verified' : 'pending', expires_at: user.driverInfo?.licenseExpiry },
+                    id_card: { status: 'pending' },
+                    vehicle_registration: { status: 'pending' }
                 };
+
                 responseData.summary = {
-                    assigned_groups: 2,
-                    total_students: 14,
-                    today_rides: 8,
-                    today_earnings: 850,
-                    pending_earnings: 12500,
-                    total_earnings: 85000
+                    assigned_groups: 0,
+                    total_students: 0,
+                    today_rides: 0,
+                    today_earnings: 0,
+                    pending_earnings: driverDetail?.totalEarnings || 0,
+                    total_earnings: driverDetail?.totalEarnings || 0
+                };
+            } else if (userType === 'parent') {
+                responseData.summary = {
+                    children_count: 0, // TODO: count from ParentChildRelationship
+                    active_subscriptions: 0,
+                    active_packages: 0,
+                    pending_payments: 0,
+                    total_rides: 0
                 };
             }
 
@@ -733,7 +831,7 @@ class ApiAuthController {
         }
     }
 
-    // Resend OTP
+    // 9. POST /auth/resend-otp - Resend OTP
     static async resendOTP(req, res) {
         try {
             const { phone, purpose } = req.body;
@@ -759,12 +857,12 @@ class ApiAuthController {
                 });
             }
 
-            // Check if can resend (rate limiting)
+            // Rate limiting
             const now = new Date();
             const lastOTPSent = user.lastOTPSent || new Date(0);
             const timeSinceLastOTP = now - lastOTPSent;
 
-            if (timeSinceLastOTP < 60000) { // 1 minute
+            if (timeSinceLastOTP < 60000) {
                 return res.status(429).json({
                     success: false,
                     error: {
@@ -781,9 +879,13 @@ class ApiAuthController {
             const otp = generateOTP();
             user.otp = otp;
             user.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
-            user.otpPurpose = purpose || 'verification';
+            user.otpPurpose = purpose || 'registration';
+            user.otpAttempts = 0;
             user.lastOTPSent = now;
             await user.save();
+
+            // TODO: Send OTP via Afro SMS
+            console.log(`[OTP] Resend OTP for ${phone}: ${otp}`);
 
             res.json({
                 success: true,
@@ -806,7 +908,7 @@ class ApiAuthController {
         }
     }
 
-    // Change password (logged in user)
+    // 10. POST /auth/change-password - Change Password (Logged In)
     static async changePassword(req, res) {
         try {
             const { current_password, new_password, confirm_password } = req.body;
@@ -836,13 +938,23 @@ class ApiAuthController {
                     success: false,
                     error: {
                         code: 'WEAK_PASSWORD',
-                        message: 'Password must be at least 8 characters long'
+                        message: 'Password must be at least 8 characters with numbers and letters'
                     }
                 });
             }
 
-            const user = req.user;
-            
+            // Get user with password field
+            const user = await User.findById(req.user._id).select('+password');
+            if (!user) {
+                return res.status(401).json({
+                    success: false,
+                    error: {
+                        code: 'UNAUTHORIZED',
+                        message: 'User not found'
+                    }
+                });
+            }
+
             // Verify current password
             const isCurrentPasswordValid = await bcrypt.compare(current_password, user.password);
             if (!isCurrentPasswordValid) {
@@ -855,9 +967,8 @@ class ApiAuthController {
                 });
             }
 
-            // Hash new password
-            const hashedPassword = await bcrypt.hash(new_password, 12);
-            user.password = hashedPassword;
+            // Update password (pre-save hook will hash it)
+            user.password = new_password;
             await user.save();
 
             res.json({
@@ -877,7 +988,7 @@ class ApiAuthController {
         }
     }
 
-    // Delete account
+    // 11. DELETE /auth/account - Delete Account
     static async deleteAccount(req, res) {
         try {
             const { password, reason, feedback } = req.body;
@@ -892,8 +1003,18 @@ class ApiAuthController {
                 });
             }
 
-            const user = req.user;
-            
+            // Get user with password field
+            const user = await User.findById(req.user._id).select('+password');
+            if (!user) {
+                return res.status(401).json({
+                    success: false,
+                    error: {
+                        code: 'UNAUTHORIZED',
+                        message: 'User not found'
+                    }
+                });
+            }
+
             // Verify password
             const isPasswordValid = await bcrypt.compare(password, user.password);
             if (!isPasswordValid) {
@@ -906,12 +1027,13 @@ class ApiAuthController {
                 });
             }
 
-            // Schedule deletion (soft delete with deletion date)
+            // Schedule deletion (soft delete with 30-day grace period)
             user.status = 'deleted';
-            user.deletionDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+            user.deletionDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
             user.deletionReason = reason;
             user.deletionFeedback = feedback;
             user.isActive = false;
+            user.refreshToken = null;
             await user.save();
 
             res.json({

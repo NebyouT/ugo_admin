@@ -50,10 +50,10 @@ class UserManagementController {
 
       // Execute query with pagination
       const users = await User.find(query)
-        .populate('userLevel', 'name level badgeColor')
         .sort(sort)
         .limit(limit * 1)
-        .skip((page - 1) * limit);
+        .skip((page - 1) * limit)
+        .lean();
 
       const total = await User.countDocuments(query);
 
@@ -123,6 +123,14 @@ class UserManagementController {
     try {
       const userData = req.body;
       
+      // Validate required fields
+      if (!userData.firstName || !userData.lastName || !userData.email || !userData.phone || !userData.password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required fields: firstName, lastName, email, phone, password'
+        });
+      }
+      
       // Check if email or phone already exists
       const existingUser = await User.findOne({
         $or: [
@@ -138,57 +146,65 @@ class UserManagementController {
         });
       }
 
-      // Set default user level if not provided
-      if (!userData.userLevel) {
-        const defaultLevel = await UserLevel.getDefaultLevel();
-        userData.userLevel = defaultLevel ? defaultLevel._id : null;
-      }
-
       // Generate referral code if not provided
       if (!userData.referralCode) {
         userData.referralCode = `UGO${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
       }
 
+      // Create user with all data (including children and driverInfo)
       const user = new User(userData);
       await user.save();
 
       // Create driver details if user type is driver
-      if (userData.userType === 'driver') {
-        const driverDetail = new DriverDetail({
-          user: user._id,
-          services: userData.driverInfo?.services || ['ride']
-        });
-        await driverDetail.save();
+      if (userData.userType === 'driver' && userData.driverInfo) {
+        try {
+          const driverDetail = new DriverDetail({
+            user: user._id,
+            licenseNumber: userData.driverInfo.licenseNumber,
+            licenseExpiry: userData.driverInfo.licenseExpiry,
+            vehicleType: userData.driverInfo.vehicleType,
+            services: userData.driverInfo.services || ['ride'],
+            isVerified: userData.driverInfo.isVerified || false
+          });
+          await driverDetail.save();
+        } catch (driverError) {
+          console.log('Driver detail creation failed (non-critical):', driverError.message);
+        }
       }
 
-      // Update role and level counts
-      if (userData.role) {
-        await UserRole.findOneAndUpdate(
-          { name: userData.role },
-          { $inc: { userCount: 1 } }
-        );
-      }
-      
-      if (userData.userLevel) {
-        await UserLevel.findByIdAndUpdate(
-          userData.userLevel,
-          { $inc: { userCount: 1 } }
-        );
+      // Try to update role and level counts (non-critical)
+      try {
+        if (userData.role) {
+          await UserRole.findOneAndUpdate(
+            { name: userData.role },
+            { $inc: { userCount: 1 } },
+            { upsert: false }
+          );
+        }
+        
+        if (userData.userLevel) {
+          await UserLevel.findByIdAndUpdate(
+            userData.userLevel,
+            { $inc: { userCount: 1 } }
+          );
+        }
+      } catch (countError) {
+        console.log('Count update failed (non-critical):', countError.message);
       }
 
-      const populatedUser = await User.findById(user._id)
-        .populate('userLevel', 'name level badgeColor');
+      // Return user without trying to populate if UserLevel doesn't exist
+      const createdUser = await User.findById(user._id).lean();
 
       res.status(201).json({
         success: true,
-        message: 'User created successfully',
-        data: { user: populatedUser }
+        message: `${userData.userType === 'driver' ? 'Driver' : userData.userType === 'customer' ? 'Parent' : 'User'} created successfully`,
+        data: { user: createdUser }
       });
     } catch (error) {
       console.error('Create user error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to create user'
+        message: error.message || 'Failed to create user'
       });
     }
   }
@@ -399,10 +415,10 @@ class UserManagementController {
       sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
       const customers = await User.find(query)
-        .populate('userLevel', 'name level badgeColor')
         .sort(sort)
         .limit(limit * 1)
-        .skip((page - 1) * limit);
+        .skip((page - 1) * limit)
+        .lean();
 
       const total = await User.countDocuments(query);
 
@@ -466,17 +482,17 @@ class UserManagementController {
       sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
       const drivers = await User.find(query)
-        .populate('userLevel', 'name level badgeColor')
         .sort(sort)
         .limit(limit * 1)
-        .skip((page - 1) * limit);
+        .skip((page - 1) * limit)
+        .lean();
 
       // Get driver details for each driver
       const driversWithDetails = await Promise.all(
         drivers.map(async (driver) => {
-          const driverDetail = await DriverDetail.findOne({ user: driver._id });
+          const driverDetail = await DriverDetail.findOne({ user: driver._id }).lean();
           return {
-            ...driver.toObject(),
+            ...driver,
             driverDetail
           };
         })

@@ -1,3 +1,9 @@
+// server.js - Legacy entry point. Delegates to app.js (the canonical entry point).
+// Use `node app.js` or `npm start` for production.
+require('./app');
+return;
+
+// ===== LEGACY CODE BELOW (kept for reference, not executed) =====
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');

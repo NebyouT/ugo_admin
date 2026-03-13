@@ -16,6 +16,13 @@ services:
       - key: JWT_SECRET
         generateValue: true
         length: 32
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+        length: 32
+      - key: ADMIN_EMAIL
+        value: admin@ugo.com
+      - key: ADMIN_PASSWORD
+        value: 12345678
     autoDeploy: true
     
 databases:

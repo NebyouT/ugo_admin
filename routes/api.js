@@ -6,18 +6,16 @@ router.get('/health', (req, res) => {
   res.json({
     status: 'OK',
     message: 'UGO API is running',
-    version: '1.0.0'
+    version: '2.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      users: '/api/users',
+      health: '/api/health'
+    }
   });
 });
 
-// User Management Routes
-router.use('/auth', require('../modules/user-management/routes/auth'));
-
-// Placeholder for future API routes
-// Vehicle Management routes will be added here
-// router.use('/vehicles', require('./modules/vehicle-management/routes'));
-
-// Trip Management routes will be added here
-// router.use('/trips', require('./modules/trip-management/routes'));
+// NOTE: Auth routes are mounted directly in app.js at /api/auth
+// to avoid conflicts. Do NOT add /auth routes here.
 
 module.exports = router;

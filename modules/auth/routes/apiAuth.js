@@ -3,44 +3,45 @@ const router = express.Router();
 const ApiAuthController = require('../controllers/ApiAuthController');
 const { authenticate } = require('../middleware/auth');
 
-// Apply authentication middleware to protected routes
-router.use(authenticate);
+// ============================================
+// PUBLIC ROUTES (no authentication required)
+// ============================================
 
-// Public routes (no authentication required)
-
-// Register new user
+// 1. Register new user (parent or driver)
 router.post('/register', ApiAuthController.register);
 
-// Login user
+// 2. Login user
 router.post('/login', ApiAuthController.login);
 
-// Forgot password
+// 4. Forgot password - request OTP
 router.post('/forgot-password', ApiAuthController.forgotPassword);
 
-// Reset password
+// 5. Reset password with OTP
 router.post('/reset-password', ApiAuthController.resetPassword);
 
-// Verify OTP
+// 6. Verify OTP code
 router.post('/verify-otp', ApiAuthController.verifyOTP);
 
-// Refresh token
+// 7. Refresh access token
 router.post('/refresh-token', ApiAuthController.refreshToken);
 
-// Resend OTP
+// 9. Resend OTP
 router.post('/resend-otp', ApiAuthController.resendOTP);
 
-// Protected routes (authentication required)
+// ============================================
+// PROTECTED ROUTES (authentication required)
+// ============================================
 
-// Logout user
-router.post('/logout', ApiAuthController.logout);
+// 3. Logout user
+router.post('/logout', authenticate, ApiAuthController.logout);
 
-// Get current user
-router.get('/me', ApiAuthController.getCurrentUser);
+// 8. Get current user profile
+router.get('/me', authenticate, ApiAuthController.getCurrentUser);
 
-// Change password (logged in user)
-router.post('/change-password', ApiAuthController.changePassword);
+// 10. Change password (logged in user)
+router.post('/change-password', authenticate, ApiAuthController.changePassword);
 
-// Delete account
-router.delete('/account', ApiAuthController.deleteAccount);
+// 11. Delete account
+router.delete('/account', authenticate, ApiAuthController.deleteAccount);
 
 module.exports = router;

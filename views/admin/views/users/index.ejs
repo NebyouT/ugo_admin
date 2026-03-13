@@ -7,344 +7,155 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #667eea;
-            --secondary-color: #764ba2;
-            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
+        :root { --sidebar-w: 260px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin-left: var(--sidebar-w); }
+        .main { padding: 2rem; min-height: 100vh; max-width: 1200px; }
+        .page-title { font-size: 1.5rem; font-weight: 700; color: #1a1d29; }
+        .page-subtitle { color: #6c757d; font-size: 0.875rem; }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-            margin-left: 250px; /* Space for sidebar */
-        }
+        .card-panel { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+        .toolbar { padding: 1rem 1.5rem; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        .toolbar .form-control, .toolbar .form-select { font-size: 0.85rem; border-radius: 8px; }
+        .toolbar .search-input { max-width: 280px; }
 
-        .main-content {
-            padding: 2rem;
-            min-height: 100vh;
-        }
+        .table th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #6c757d; font-weight: 600; border-bottom-width: 1px; padding: 0.75rem 1rem; }
+        .table td { padding: 0.75rem 1rem; vertical-align: middle; font-size: 0.85rem; }
+        .table tbody tr { transition: background 0.15s; }
+        .table tbody tr:hover { background: #f8f9fa; }
 
-        .page-header {
-            background: white;
-            border-radius: 1rem;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: var(--card-shadow);
-        }
+        .avatar { width: 34px; height: 34px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.7rem; color: #fff; flex-shrink: 0; }
+        .badge-role { font-size: 0.65rem; padding: 0.2em 0.55em; border-radius: 4px; font-weight: 500; }
+        .badge-status { font-size: 0.65rem; padding: 0.2em 0.55em; border-radius: 4px; font-weight: 500; }
 
-        .users-card {
-            background: white;
-            border-radius: 1rem;
-            padding: 2rem;
-            box-shadow: var(--card-shadow);
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
-        .status-badge {
-            font-size: 0.8rem;
-            padding: 0.25rem 0.75rem;
-        }
-
-        .role-badge {
-            font-size: 0.8rem;
-            padding: 0.25rem 0.75rem;
-        }
-
-        .action-btn {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.8rem;
-            margin: 0 0.1rem;
-        }
-
-        .search-box {
-            background: white;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            box-shadow: var(--card-shadow);
-        }
-
-        .mobile-menu-toggle {
-            display: none;
-            position: fixed;
-            top: 1rem;
-            left: 1rem;
-            z-index: 1001;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            padding: 0.75rem;
-            font-size: 1.2rem;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                margin-left: 0;
-            }
-            
-            .mobile-menu-toggle {
-                display: block;
-            }
-            
-            .main-content {
-                padding: 1rem;
-                padding-top: 4rem;
-            }
-        }
+        .action-btn { padding: 0.25rem 0.45rem; font-size: 0.75rem; border-radius: 6px; }
+        .pagination { margin: 0; }
+        .page-link { font-size: 0.8rem; }
+        .empty-state { text-align: center; padding: 3rem; color: #6c757d; }
+        .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 9999; }
+        @media (max-width: 768px) { body { margin-left: 0; } .main { padding: 1rem; } .toolbar { flex-direction: column; } .toolbar .search-input { max-width: 100%; } }
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle -->
-    <button class="mobile-menu-toggle" onclick="toggleSidebar()">
-        <i class="fas fa-bars"></i>
-    </button>
+    <%- include('../../components/sidebar') %>
 
-    <!-- Sidebar Component -->
-    <%- include('../../components/sidebar', { user: user, currentPath: currentPath }) %>
-
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="page-header">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <h1 class="h2 mb-0">User Management</h1>
-                    <p class="text-muted mb-0">Manage all system users and their permissions</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                        <i class="fas fa-user-plus me-2"></i>Add New User
-                    </button>
-                </div>
+    <div class="main">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <div class="page-title"><%= typeof filterUserType !== 'undefined' && filterUserType === 'customer' ? 'Parents' : 'All Users' %></div>
+                <div class="page-subtitle">Manage <% if (typeof filterUserType !== 'undefined' && filterUserType === 'customer') { %>parent<% } else { %>user<% } %> accounts</div>
             </div>
+            <button class="btn btn-sm btn-outline-secondary d-md-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
         </div>
 
-        <!-- Search and Filter -->
-        <div class="search-box">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" class="form-control" placeholder="Search users..." id="searchInput">
-                    </div>
+        <div class="card-panel">
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="input-group search-input">
+                    <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0" placeholder="Search by name, email, phone..." id="searchInput">
                 </div>
-                <div class="col-md-2">
-                    <select class="form-select" id="roleFilter">
-                        <option value="">All Roles</option>
-                        <option value="admin">Admin</option>
-                        <option value="driver">Driver</option>
-                        <option value="parent">Parent</option>
-                        <option value="student">Student</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select class="form-select" id="statusFilter">
-                        <option value="">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                        <option value="suspended">Suspended</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <button class="btn btn-outline-secondary me-2" onclick="resetFilters()">
-                        <i class="fas fa-redo me-1"></i>Reset
-                    </button>
-                    <button class="btn btn-primary" onclick="applyFilters()">
-                        <i class="fas fa-filter me-1"></i>Apply Filters
-                    </button>
+                <% if (typeof filterUserType === 'undefined' || !filterUserType) { %>
+                <select class="form-select" id="typeFilter" style="width:auto">
+                    <option value="">All Types</option>
+                    <option value="customer">Parent</option>
+                    <option value="driver">Driver</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <% } %>
+                <select class="form-select" id="statusFilter" style="width:auto">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+                <div class="ms-auto d-flex gap-2">
+                    <% if (currentPath === '/parents') { %>
+                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addParentModal"><i class="fas fa-user-plus me-1"></i>Add Parent</button>
+                    <% } %>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="loadUsers(1)" title="Refresh"><i class="fas fa-sync-alt"></i></button>
                 </div>
             </div>
-        </div>
 
-        <!-- Users Table -->
-        <div class="users-card">
+            <!-- Table -->
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover mb-0">
                     <thead>
                         <tr>
                             <th>User</th>
-                            <th>Role</th>
-                            <th>Email</th>
-                            <th>Phone</th>
+                            <th>Type</th>
+                            <th>Contact</th>
                             <th>Status</th>
                             <th>Joined</th>
-                            <th>Actions</th>
+                            <th style="width:120px">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="usersTableBody">
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="https://picsum.photos/seed/user1/40/40.jpg" alt="User" class="user-avatar me-2">
-                                    <div>
-                                        <div class="fw-bold">John Doe</div>
-                                        <div class="text-muted small">ID: #USR001</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-primary role-badge">Admin</span></td>
-                            <td>john.doe@example.com</td>
-                            <td>+1 234-567-8900</td>
-                            <td><span class="badge bg-success status-badge">Active</span></td>
-                            <td>Jan 15, 2026</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary action-btn" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-info action-btn" title="View">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger action-btn" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="https://picsum.photos/seed/user2/40/40.jpg" alt="User" class="user-avatar me-2">
-                                    <div>
-                                        <div class="fw-bold">Jane Smith</div>
-                                        <div class="text-muted small">ID: #USR002</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-success role-badge">Driver</span></td>
-                            <td>jane.smith@example.com</td>
-                            <td>+1 234-567-8901</td>
-                            <td><span class="badge bg-success status-badge">Active</span></td>
-                            <td>Feb 20, 2026</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary action-btn" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-info action-btn" title="View">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger action-btn" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="https://picsum.photos/seed/user3/40/40.jpg" alt="User" class="user-avatar me-2">
-                                    <div>
-                                        <div class="fw-bold">Robert Johnson</div>
-                                        <div class="text-muted small">ID: #USR003</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-info role-badge">Parent</span></td>
-                            <td>robert.j@example.com</td>
-                            <td>+1 234-567-8902</td>
-                            <td><span class="badge bg-warning status-badge">Inactive</span></td>
-                            <td>Mar 10, 2026</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary action-btn" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-info action-btn" title="View">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger action-btn" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
+                    <tbody id="tableBody">
+                        <tr><td colspan="6" class="empty-state"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
 
             <!-- Pagination -->
-            <nav aria-label="Users pagination">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1">Previous</a>
-                    </li>
-                    <li class="page-item active">
-                        <a class="page-link" href="#">1</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">2</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">3</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">Next</a>
-                    </li>
-                </ul>
-            </nav>
+            <div class="d-flex align-items-center justify-content-between p-3 border-top" style="font-size:0.8rem">
+                <div class="text-muted" id="paginationInfo">-</div>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="paginationNav"></ul>
+                </nav>
+            </div>
         </div>
-    </main>
+    </div>
 
-    <!-- Add User Modal -->
-    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <!-- Toast container for alerts -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Add Parent Modal -->
+    <div class="modal fade" id="addParentModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addUserModalLabel">Add New User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Add Parent</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addUserForm">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="firstName" class="form-label">First Name</label>
-                                <input type="text" class="form-control" id="firstName" required>
+                    <form id="parentForm">
+                        <h6 class="mb-3">Parent Information</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">First Name *</label>
+                                <input type="text" class="form-control" name="firstName" required>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="lastName" class="form-label">Last Name</label>
-                                <input type="text" class="form-control" id="lastName" required>
+                            <div class="col-md-6">
+                                <label class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" name="lastName" required>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" required>
+                            <div class="col-md-6">
+                                <label class="form-label">Email *</label>
+                                <input type="email" class="form-control" name="email" required>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="phone" class="form-label">Phone</label>
-                                <input type="tel" class="form-control" id="phone">
+                            <div class="col-md-6">
+                                <label class="form-label">Phone *</label>
+                                <input type="tel" class="form-control" name="phone" required placeholder="+251912345678">
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="role" class="form-label">Role</label>
-                                <select class="form-select" id="role" required>
-                                    <option value="">Select Role</option>
-                                    <option value="admin">Admin</option>
-                                    <option value="driver">Driver</option>
-                                    <option value="parent">Parent</option>
-                                    <option value="student">Student</option>
-                                </select>
+                            <div class="col-md-6">
+                                <label class="form-label">Password *</label>
+                                <input type="password" class="form-control" name="password" required minlength="8">
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="status" class="form-label">Status</label>
-                                <select class="form-select" id="status" required>
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                    <option value="suspended">Suspended</option>
-                                </select>
+                            <div class="col-md-6">
+                                <label class="form-label">Address</label>
+                                <input type="text" class="form-control" name="address">
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" required>
+
+                        <hr class="my-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Children</h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addChildField()"><i class="fas fa-plus me-1"></i>Add Child</button>
                         </div>
+                        <div id="childrenContainer"></div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="saveUser()">Save User</button>
+                    <button type="button" class="btn btn-success" onclick="saveParent()"><i class="fas fa-save me-1"></i>Save Parent</button>
                 </div>
             </div>
         </div>
@@ -352,373 +163,321 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let currentUser = null;
-        let users = [];
+    const API = '/api/users';
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+    const FILTER_USER_TYPE = '<%= typeof filterUserType !== "undefined" ? filterUserType : "" %>';
+    const roleColors = { admin: '#667eea', driver: '#e6a800', customer: '#28a745', parent: '#28a745' };
+    let currentPage = 1;
+    let debounceTimer;
+    let allUsers = [];
 
-        // Check authentication and load data
-        async function initializePage() {
-            try {
-                await checkAuthStatus();
-                await loadUsers();
-                setupEventListeners();
-            } catch (error) {
-                console.error('Failed to initialize page:', error);
-                if (error.message.includes('Authentication')) {
-                    window.location.href = '/admin/login';
-                }
-            }
-        }
+    // Toast helper
+    function showToast(msg, type = 'success') {
+        const id = 't' + Date.now();
+        document.getElementById('toastContainer').insertAdjacentHTML('beforeend',
+            `<div id="${id}" class="toast align-items-center text-bg-${type} border-0 show" role="alert">
+                <div class="d-flex"><div class="toast-body">${msg}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`);
+        setTimeout(() => document.getElementById(id)?.remove(), 4000);
+    }
 
-        // Check authentication status
-        async function checkAuthStatus() {
-            try {
-                const response = await fetch('/admin/auth/check');
-                const result = await response.json();
-                
-                if (!result.success || !result.data.user) {
-                    throw new Error('Authentication failed');
-                }
-                
-                currentUser = result.data.user;
-            } catch (error) {
-                console.error('Auth check failed:', error);
-                window.location.href = '/admin/login';
-                throw error;
-            }
-        }
+    // Build query params
+    function buildParams(page) {
+        const p = { page, limit: 15, sortBy: 'createdAt', sortOrder: 'desc' };
+        const search = document.getElementById('searchInput')?.value.trim();
+        const status = document.getElementById('statusFilter')?.value;
+        const type = document.getElementById('typeFilter')?.value || FILTER_USER_TYPE;
+        if (search) p.search = search;
+        if (status) p.status = status;
+        if (type) p.userType = type;
+        return new URLSearchParams(p).toString();
+    }
 
-        // Load users from API
-        async function loadUsers(page = 1, filters = {}) {
-            try {
-                const params = new URLSearchParams({
-                    page: page.toString(),
-                    limit: '10',
-                    ...filters
-                });
-                
-                const response = await fetch(`/api/users?${params}`);
-                const result = await response.json();
-                
-                if (result.success) {
-                    users = result.data.users || [];
-                    renderUsersTable();
-                    updatePagination(result.data.pagination);
-                } else {
-                    throw new Error(result.message || 'Failed to load users');
-                }
-            } catch (error) {
-                console.error('Load users error:', error);
-                // Use demo data as fallback
-                users = getDemoUsers();
-                renderUsersTable();
-                showAlert('Using demo data. API connection failed.', 'warning');
-            }
-        }
+    // Load users
+    async function loadUsers(page = 1) {
+        currentPage = page;
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
 
-        // Demo users data
-        function getDemoUsers() {
-            return [
-                {
-                    _id: '1',
-                    firstName: 'John',
-                    lastName: 'Doe',
-                    email: 'john.doe@example.com',
-                    phone: '+1 234-567-8900',
-                    role: 'admin',
-                    status: 'active',
-                    createdAt: '2026-01-15'
-                },
-                {
-                    _id: '2',
-                    firstName: 'Jane',
-                    lastName: 'Smith',
-                    email: 'jane.smith@example.com',
-                    phone: '+1 234-567-8901',
-                    role: 'driver',
-                    status: 'active',
-                    createdAt: '2026-02-20'
-                },
-                {
-                    _id: '3',
-                    firstName: 'Robert',
-                    lastName: 'Johnson',
-                    email: 'robert.j@example.com',
-                    phone: '+1 234-567-8902',
-                    role: 'parent',
-                    status: 'inactive',
-                    createdAt: '2026-03-10'
-                }
-            ];
-        }
+        try {
+            const endpoint = FILTER_USER_TYPE === 'customer' ? `${API}/customers` : (FILTER_USER_TYPE === 'driver' ? `${API}/drivers` : API);
+            const res = await fetch(`${endpoint}?${buildParams(page)}`, { headers, credentials: 'include' });
+            const data = await res.json();
 
-        // Render users table
-        function renderUsersTable() {
-            const tbody = document.getElementById('usersTableBody');
-            if (!tbody) return;
+            if (!data.success) throw new Error(data.message);
 
-            tbody.innerHTML = '';
-
-            users.forEach(user => {
-                const row = createUserRow(user);
-                tbody.appendChild(row);
-            });
-        }
-
-        // Create user table row
-        function createUserRow(user) {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>
-                    <div class="d-flex align-items-center">
-                        <img src="https://picsum.photos/seed/${user._id}/40/40.jpg" alt="${user.firstName}" class="user-avatar me-2">
-                        <div>
-                            <div class="fw-bold">${user.firstName} ${user.lastName}</div>
-                            <div class="text-muted small">ID: #USR${user._id.padStart(3, '0')}</div>
-                        </div>
-                    </div>
-                </td>
-                <td><span class="badge bg-${getRoleBadgeColor(user.role)} role-badge">${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span></td>
-                <td>${user.email}</td>
-                <td>${user.phone || 'Not provided'}</td>
-                <td><span class="badge bg-${getStatusBadgeColor(user.status)} status-badge">${user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span></td>
-                <td>${new Date(user.createdAt).toLocaleDateString()}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary action-btn" onclick="editUser('${user._id}')" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-info action-btn" onclick="viewUser('${user._id}')" title="View">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger action-btn" onclick="deleteUser('${user._id}')" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            `;
-            return tr;
-        }
-
-        // Get role badge color
-        function getRoleBadgeColor(role) {
-            const colors = {
-                admin: 'primary',
-                driver: 'success',
-                parent: 'info',
-                student: 'warning',
-                employee: 'secondary'
-            };
-            return colors[role] || 'secondary';
-        }
-
-        // Get status badge color
-        function getStatusBadgeColor(status) {
-            const colors = {
-                active: 'success',
-                inactive: 'warning',
-                suspended: 'danger'
-            };
-            return colors[status] || 'secondary';
-        }
-
-        // Setup event listeners
-        function setupEventListeners() {
-            // Search functionality
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.addEventListener('keyup', function(e) {
-                    if (e.key === 'Enter') {
-                        applyFilters();
-                    }
-                });
-            }
-
-            // Form submission
-            const addUserForm = document.getElementById('addUserForm');
-            if (addUserForm) {
-                addUserForm.addEventListener('submit', saveUser);
-            }
-        }
-
-        // Apply filters
-        function applyFilters() {
-            const searchValue = document.getElementById('searchInput').value.toLowerCase();
-            const roleValue = document.getElementById('roleFilter').value;
-            const statusValue = document.getElementById('statusFilter').value;
-
-            const filteredUsers = users.filter(user => {
-                const matchesSearch = !searchValue || 
-                    user.firstName.toLowerCase().includes(searchValue) ||
-                    user.lastName.toLowerCase().includes(searchValue) ||
-                    user.email.toLowerCase().includes(searchValue);
-                
-                const matchesRole = !roleValue || user.role === roleValue;
-                const matchesStatus = !statusValue || user.status === statusValue;
-
-                return matchesSearch && matchesRole && matchesStatus;
-            });
-
-            // Re-render table with filtered users
-            const tbody = document.getElementById('usersTableBody');
-            tbody.innerHTML = '';
-            filteredUsers.forEach(user => {
-                const row = createUserRow(user);
-                tbody.appendChild(row);
-            });
-        }
-
-        // Reset filters
-        function resetFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('roleFilter').value = '';
-            document.getElementById('statusFilter').value = '';
-            renderUsersTable();
-        }
-
-        // Save user (create/update)
-        async function saveUser() {
-            try {
-                const formData = new FormData(document.getElementById('addUserForm'));
-                const userData = Object.fromEntries(formData);
-
-                // Validate required fields
-                if (!userData.firstName || !userData.lastName || !userData.email || !userData.password) {
-                    showAlert('Please fill in all required fields', 'danger');
-                    return;
-                }
-
-                // Email validation
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(userData.email)) {
-                    showAlert('Please enter a valid email address', 'danger');
-                    return;
-                }
-
-                const response = await fetch('/api/users', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(userData)
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showAlert('User created successfully!', 'success');
-                    
-                    // Close modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('addUserModal'));
-                    modal.hide();
-                    
-                    // Reset form
-                    document.getElementById('addUserForm').reset();
-                    
-                    // Reload users
-                    await loadUsers();
-                } else {
-                    showAlert(result.message || 'Failed to create user', 'danger');
-                }
-            } catch (error) {
-                console.error('Save user error:', error);
-                showAlert('Failed to save user. Please try again.', 'danger');
-            }
-        }
-
-        // Edit user
-        function editUser(userId) {
-            const user = users.find(u => u._id === userId);
-            if (!user) return;
-
-            // Populate form with user data
-            document.getElementById('firstName').value = user.firstName;
-            document.getElementById('lastName').value = user.lastName;
-            document.getElementById('email').value = user.email;
-            document.getElementById('phone').value = user.phone || '';
-            document.getElementById('role').value = user.role;
-            document.getElementById('status').value = user.status;
+            const users = data.data.users || data.data.customers || data.data.drivers || [];
+            const pagination = data.data.pagination;
             
-            // Remove password requirement for edit
-            document.getElementById('password').removeAttribute('required');
+            // Store for edit functionality
+            allUsers = users;
 
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('addUserModal'));
-            modal.show();
-        }
-
-        // View user details
-        function viewUser(userId) {
-            const user = users.find(u => u._id === userId);
-            if (!user) return;
-
-            // Create user details modal or navigate to detail page
-            console.log('View user:', user);
-            // For now, just show an alert
-            alert(`User Details:\n\nName: ${user.firstName} ${user.lastName}\nEmail: ${user.email}\nRole: ${user.role}\nStatus: ${user.status}`);
-        }
-
-        // Delete user
-        async function deleteUser(userId) {
-            const user = users.find(u => u._id === userId);
-            if (!user) return;
-
-            if (!confirm(`Are you sure you want to delete ${user.firstName} ${user.lastName}?`)) {
+            if (!users.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-users me-2"></i>No users found</td></tr>';
+                document.getElementById('paginationInfo').textContent = '0 results';
+                document.getElementById('paginationNav').innerHTML = '';
                 return;
             }
 
-            try {
-                const response = await fetch(`/api/users/${userId}`, {
-                    method: 'DELETE'
+            tbody.innerHTML = users.map(u => {
+                const name = `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'N/A';
+                const initials = ((u.firstName?.[0] || '') + (u.lastName?.[0] || '')).toUpperCase() || '?';
+                const type = u.userType || u.role || 'user';
+                const color = roleColors[type] || '#667eea';
+                const active = u.isActive !== false;
+                const date = u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
+                return `<tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="avatar" style="background:${color}">${initials}</div>
+                            <div><div class="fw-semibold">${name}</div></div>
+                        </div>
+                    </td>
+                    <td><span class="badge-role" style="background:${color}15;color:${color}">${type}</span></td>
+                    <td><div>${u.email || '-'}</div><div class="text-muted" style="font-size:0.75rem">${u.phone || ''}</div></td>
+                    <td><span class="badge-status" style="background:${active ? '#28a74515' : '#dc354515'};color:${active ? '#28a745' : '#dc3545'}">${active ? 'Active' : 'Inactive'}</span></td>
+                    <td class="text-muted">${date}</td>
+                    <td>
+                        <button class="btn btn-sm action-btn btn-outline-primary" onclick="editUser('${u._id}')" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm action-btn btn-outline-${active ? 'warning' : 'success'}" onclick="toggleStatus('${u._id}', ${active})" title="${active ? 'Deactivate' : 'Activate'}">
+                            <i class="fas fa-${active ? 'ban' : 'check'}"></i>
+                        </button>
+                        <button class="btn btn-sm action-btn btn-outline-danger" onclick="deleteUser('${u._id}', '${name}')" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            // Pagination
+            const { current, total, pages } = pagination;
+            document.getElementById('paginationInfo').textContent = `Showing page ${current} of ${pages} (${total} total)`;
+            let nav = '';
+            if (pages > 1) {
+                nav += `<li class="page-item ${current <= 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="loadUsers(${current-1});return false">Prev</a></li>`;
+                for (let i = Math.max(1, current-2); i <= Math.min(pages, current+2); i++) {
+                    nav += `<li class="page-item ${i===current?'active':''}"><a class="page-link" href="#" onclick="loadUsers(${i});return false">${i}</a></li>`;
+                }
+                nav += `<li class="page-item ${current >= pages ? 'disabled' : ''}"><a class="page-link" href="#" onclick="loadUsers(${current+1});return false">Next</a></li>`;
+            }
+            document.getElementById('paginationNav').innerHTML = nav;
+
+        } catch (e) {
+            console.error('Load error:', e);
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-state text-danger"><i class="fas fa-exclamation-circle me-2"></i>${e.message || 'Failed to load users'}</td></tr>`;
+        }
+    }
+
+    // Toggle user status
+    async function toggleStatus(id, isActive) {
+        try {
+            const res = await fetch(`${API}/${id}/toggle-status`, { method: 'PATCH', headers, credentials: 'include' });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`User ${isActive ? 'deactivated' : 'activated'} successfully`);
+                loadUsers(currentPage);
+            } else {
+                showToast(data.message || 'Failed', 'danger');
+            }
+        } catch (e) {
+            showToast('Failed to update status', 'danger');
+        }
+    }
+
+    // Delete user
+    async function deleteUser(id, name) {
+        if (!confirm(`Deactivate user "${name}"? This is a soft delete.`)) return;
+        try {
+            const res = await fetch(`${API}/${id}`, { method: 'DELETE', headers, credentials: 'include' });
+            const data = await res.json();
+            if (data.success) {
+                showToast('User deleted successfully');
+                loadUsers(currentPage);
+            } else {
+                showToast(data.message || 'Failed', 'danger');
+            }
+        } catch (e) {
+            showToast('Failed to delete user', 'danger');
+        }
+    }
+
+    // Search debounce
+    document.getElementById('searchInput').addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => loadUsers(1), 400);
+    });
+
+    // Filter change
+    document.getElementById('statusFilter').addEventListener('change', () => loadUsers(1));
+    if (document.getElementById('typeFilter')) {
+        document.getElementById('typeFilter').addEventListener('change', () => loadUsers(1));
+    }
+
+    // Edit user (parent)
+    function editUser(id) {
+        const user = allUsers.find(u => u._id === id);
+        if (!user) {
+            showToast('User not found', 'danger');
+            return;
+        }
+
+        // Only allow editing parents on parents page
+        if (FILTER_USER_TYPE === 'customer' || user.userType === 'customer' || user.role === 'parent') {
+            document.getElementById('parentForm').querySelector('input[name="firstName"]').value = user.firstName || '';
+            document.getElementById('parentForm').querySelector('input[name="lastName"]').value = user.lastName || '';
+            document.getElementById('parentForm').querySelector('input[name="email"]').value = user.email || '';
+            document.getElementById('parentForm').querySelector('input[name="phone"]').value = user.phone || '';
+            document.getElementById('parentForm').querySelector('input[name="address"]').value = user.address || '';
+            document.getElementById('parentForm').querySelector('input[name="password"]').removeAttribute('required');
+            document.getElementById('parentForm').querySelector('input[name="password"]').placeholder = 'Leave blank to keep current password';
+            
+            // Set parent ID for update
+            if (!document.getElementById('parentId')) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.id = 'parentId';
+                hiddenInput.name = 'parentId';
+                document.getElementById('parentForm').appendChild(hiddenInput);
+            }
+            document.getElementById('parentId').value = user._id;
+            
+            // Load existing children
+            const childrenContainer = document.getElementById('childrenContainer');
+            childrenContainer.innerHTML = '';
+            childCount = 0;
+            
+            if (user.children && user.children.length > 0) {
+                user.children.forEach(child => {
+                    addChildField();
+                    const currentCount = childCount;
+                    document.querySelector(`input[name="child_firstName_${currentCount}"]`).value = child.firstName || '';
+                    document.querySelector(`input[name="child_lastName_${currentCount}"]`).value = child.lastName || '';
+                    document.querySelector(`input[name="child_age_${currentCount}"]`).value = child.age || '';
+                    document.querySelector(`select[name="child_gender_${currentCount}"]`).value = child.gender || '';
+                    document.querySelector(`input[name="child_grade_${currentCount}"]`).value = child.grade || '';
                 });
+            }
+            
+            new bootstrap.Modal(document.getElementById('addParentModal')).show();
+        } else {
+            showToast('Edit functionality for this user type is not available on this page', 'warning');
+        }
+    }
 
-                const result = await response.json();
+    // Add child field to parent form
+    let childCount = 0;
+    function addChildField() {
+        childCount++;
+        const container = document.getElementById('childrenContainer');
+        const childDiv = document.createElement('div');
+        childDiv.className = 'card mb-3';
+        childDiv.id = `child-${childCount}`;
+        childDiv.innerHTML = `
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0">Child ${childCount}</h6>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeChild(${childCount})"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control form-control-sm" name="child_firstName_${childCount}" placeholder="First Name *" required>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control form-control-sm" name="child_lastName_${childCount}" placeholder="Last Name *" required>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="number" class="form-control form-control-sm" name="child_age_${childCount}" placeholder="Age" min="1" max="18">
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select form-select-sm" name="child_gender_${childCount}">
+                            <option value="">Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control form-control-sm" name="child_grade_${childCount}" placeholder="Grade">
+                    </div>
+                </div>
+            </div>`;
+        container.appendChild(childDiv);
+    }
 
-                if (result.success) {
-                    showAlert('User deleted successfully!', 'success');
-                    await loadUsers();
-                } else {
-                    showAlert(result.message || 'Failed to delete user', 'danger');
-                }
-            } catch (error) {
-                console.error('Delete user error:', error);
-                showAlert('Failed to delete user. Please try again.', 'danger');
+    function removeChild(id) {
+        document.getElementById(`child-${id}`)?.remove();
+    }
+
+    // Save parent with children
+    async function saveParent() {
+        const form = document.getElementById('parentForm');
+        const parentId = document.getElementById('parentId')?.value;
+        const isEdit = !!parentId;
+
+        if (!isEdit) {
+            form.querySelector('input[name="password"]').setAttribute('required', 'required');
+        }
+
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const formData = new FormData(form);
+        const parentData = {
+            firstName: formData.get('firstName'),
+            lastName: formData.get('lastName'),
+            email: formData.get('email'),
+            phone: formData.get('phone'),
+            address: formData.get('address'),
+            userType: 'customer',
+            role: 'parent',
+            children: []
+        };
+
+        if (!isEdit && formData.get('password')) {
+            parentData.password = formData.get('password');
+        }
+
+        // Collect children data
+        for (let i = 1; i <= childCount; i++) {
+            const firstName = formData.get(`child_firstName_${i}`);
+            if (firstName && document.getElementById(`child-${i}`)) {
+                parentData.children.push({
+                    firstName,
+                    lastName: formData.get(`child_lastName_${i}`),
+                    age: formData.get(`child_age_${i}`) || null,
+                    gender: formData.get(`child_gender_${i}`) || null,
+                    grade: formData.get(`child_grade_${i}`) || null
+                });
             }
         }
 
-        // Show alert message
-        function showAlert(message, type = 'info') {
-            // Create alert container if it doesn't exist
-            let alertContainer = document.getElementById('alertContainer');
-            if (!alertContainer) {
-                alertContainer = document.createElement('div');
-                alertContainer.id = 'alertContainer';
-                alertContainer.style.position = 'fixed';
-                alertContainer.style.top = '20px';
-                alertContainer.style.right = '20px';
-                alertContainer.style.zIndex = '9999';
-                document.body.appendChild(alertContainer);
+        try {
+            const url = isEdit ? `/api/users/${parentId}` : API;
+            const method = isEdit ? 'PUT' : 'POST';
+            const res = await fetch(url, { method, headers, credentials: 'include', body: JSON.stringify(parentData) });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`Parent ${isEdit ? 'updated' : 'created'} successfully!`);
+                bootstrap.Modal.getInstance(document.getElementById('addParentModal')).hide();
+                form.reset();
+                document.getElementById('childrenContainer').innerHTML = '';
+                if (document.getElementById('parentId')) document.getElementById('parentId').value = '';
+                childCount = 0;
+                loadUsers(1);
+            } else {
+                showToast(data.message || `Failed to ${isEdit ? 'update' : 'create'} parent`, 'danger');
             }
-
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-
-            alertContainer.appendChild(alertDiv);
-
-            // Auto-remove after 5 seconds
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);
+        } catch (e) {
+            console.error('Save parent error:', e);
+            showToast('Failed to save parent', 'danger');
         }
+    }
 
-        // Initialize page on DOM load
-        document.addEventListener('DOMContentLoaded', initializePage);
-
-        // Periodic auth check
-        setInterval(checkAuthStatus, 5 * 60 * 1000);
+    // Init
+    loadUsers(1);
     </script>
 </body>
 </html>

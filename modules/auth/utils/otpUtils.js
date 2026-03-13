@@ -1,8 +1,9 @@
 // OTP (One-Time Password) utility functions
 
 // Generate a 6-digit OTP
+// TODO: Integrate Afro SMS for real OTP delivery. For now, hardcoded to 123456.
 function generateOTP() {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return '123456';
 }
 
 // Verify OTP

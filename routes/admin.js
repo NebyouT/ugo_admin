@@ -1,242 +1,120 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate, adminOnly } = require('../modules/auth/middleware/auth');
 const { webAuthenticate, webAdminOnly } = require('../modules/auth/middleware/webAuth');
-const User = require('../modules/auth/models/User');
+const User = require('../modules/user-management/models/User');
 
 // Initialize admin user if not exists
 User.createAdminIfNotExists();
 
-// Admin login page
+// ============================================
+// PUBLIC ROUTES
+// ============================================
+
+// Login page
 router.get('/login', (req, res) => {
-  // If user is already logged in, redirect to dashboard
   if (req.cookies?.adminAuth) {
     return res.redirect('/admin');
   }
-  
-  res.render('login', { 
-    title: 'Admin Login - UGO'
-  });
+  res.render('login', { title: 'Admin Login - UGO' });
 });
 
-// Admin login POST - Web-friendly login with redirect
+// Login POST - returns JSON
 router.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    // Validate input
     if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email and password are required'
-      });
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
     }
 
-    // Import User model and AuthController
-    const User = require('../modules/user-management/models/User');
-    
-    // Find user by credentials
     const user = await User.findByCredentials(email, password);
+    if (user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin only.' });
+    }
 
-    // Generate JWT token
     const token = user.generateAuthToken();
-
-    // Set HTTP-only cookie with token
     res.cookie('adminAuth', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/'
     });
 
-    // Update last login
     user.lastLoginAt = new Date();
     await user.save();
 
-    // Log successful login
-    console.log(`User logged in: ${email} (${user.role}) at ${new Date().toISOString()}`);
-
-    // Check if this is an AJAX request (JSON expected)
-    if (req.xhr || req.headers.accept?.indexOf('json') > -1) {
-      return res.json({
-        success: true,
-        message: 'Login successful',
-        redirect: '/admin',
-        data: {
-          user: {
-            _id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            role: user.role,
-            userType: user.userType
-          }
-        }
-      });
-    }
-
-    // For regular form submissions, redirect to dashboard
-    res.redirect('/admin');
-
-  } catch (error) {
-    console.error('Login error:', error.message);
-    
-    // Return appropriate error message
-    let statusCode = 500;
-    let message = 'Login failed';
-
-    if (error.message.includes('Invalid credentials')) {
-      statusCode = 401;
-      message = 'Invalid email or password';
-    } else if (error.message.includes('Account is temporarily locked')) {
-      statusCode = 423;
-      message = 'Account temporarily locked due to multiple failed attempts. Please try again later.';
-    } else if (error.message.includes('Account is not active')) {
-      statusCode = 403;
-      message = 'Account is not active. Please contact administrator.';
-    }
-
-    // Check if this is an AJAX request
-    if (req.xhr || req.headers.accept?.indexOf('json') > -1) {
-      return res.status(statusCode).json({
-        success: false,
-        message: message
-      });
-    }
-
-    // For regular form submissions, render login page with error
-    res.status(statusCode).render('login', { 
-      title: 'Admin Login - UGO',
-      error: message
-    });
-  }
-});
-
-// Auth check endpoint for JavaScript
-router.get('/auth/check', (req, res) => {
-  if (req.cookies?.adminAuth) {
     return res.json({
       success: true,
-      message: 'User is authenticated',
+      message: 'Login successful',
       data: {
-        authenticated: true
+        user: { id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role }
       }
     });
+  } catch (error) {
+    console.error('Login error:', error.message);
+    let statusCode = 401;
+    let message = 'Invalid email or password';
+    if (error.message.includes('not active')) { statusCode = 403; message = 'Account is not active.'; }
+    return res.status(statusCode).json({ success: false, message });
   }
-  
+});
+
+// Auth check
+router.get('/auth/check', (req, res) => {
   res.json({
-    success: false,
-    message: 'User not authenticated',
-    data: {
-      authenticated: false
-    }
+    success: !!req.cookies?.adminAuth,
+    data: { authenticated: !!req.cookies?.adminAuth }
   });
 });
 
-// Admin dashboard (protected)
+// ============================================
+// PROTECTED ROUTES (require login)
+// ============================================
+
+// Dashboard
 router.get('/', webAuthenticate, webAdminOnly, (req, res) => {
-  res.render('admin/dashboard/index', { 
-    title: 'Admin Dashboard - UGO',
+  res.render('admin/dashboard/index', {
+    title: 'Dashboard - UGO Admin',
     user: req.user,
-    currentPath: req.path
+    currentPath: '/'
   });
 });
 
-// User Management page (protected)
+// All Users
 router.get('/users', webAuthenticate, webAdminOnly, (req, res) => {
-  res.render('admin/views/users/index', { 
-    title: 'User Management - UGO',
+  res.render('admin/views/users/index', {
+    title: 'All Users - UGO Admin',
     user: req.user,
-    currentPath: req.path
+    currentPath: '/users'
   });
 });
 
-// Vehicles page (protected)
-router.get('/vehicles', webAuthenticate, webAdminOnly, (req, res) => {
-  res.render('admin/views/vehicles/index', { 
-    title: 'Vehicle Management - UGO',
-    user: req.user,
-    currentPath: req.path
-  });
-});
-
-// Trips page (protected)
-router.get('/trips', webAuthenticate, webAdminOnly, (req, res) => {
-  res.render('admin/views/trips/index', { 
-    title: 'Trip Management - UGO',
-    user: req.user,
-    currentPath: req.path
-  });
-});
-
-// Parents page (protected)
+// Parents (filtered customers view)
 router.get('/parents', webAuthenticate, webAdminOnly, (req, res) => {
-  res.render('admin/views/parents/index', { 
-    title: 'Parent Management - UGO',
+  res.render('admin/views/users/index', {
+    title: 'Parents - UGO Admin',
     user: req.user,
-    currentPath: req.path
+    currentPath: '/parents',
+    filterUserType: 'customer'
   });
 });
 
-// Students page (protected)
-router.get('/students', webAuthenticate, webAdminOnly, (req, res) => {
-  res.render('admin/views/students/index', { 
-    title: 'Student Management - UGO',
-    user: req.user,
-    currentPath: req.path
-  });
-});
-
-// Drivers page (protected)
+// Drivers
 router.get('/drivers', webAuthenticate, webAdminOnly, (req, res) => {
-  res.render('admin/views/drivers/index', { 
-    title: 'Driver Management - UGO',
+  res.render('admin/views/drivers/index', {
+    title: 'Drivers - UGO Admin',
     user: req.user,
-    currentPath: req.path
+    currentPath: '/drivers'
   });
 });
 
-// Customers page (protected)
-router.get('/customers', webAuthenticate, webAdminOnly, (req, res) => {
-  res.render('admin/views/customers/index', { 
-    title: 'Customer Management - UGO',
-    user: req.user,
-    currentPath: req.path
-  });
-});
-
-// Authentication Management page (protected)
-router.get('/auth-management', webAuthenticate, webAdminOnly, (req, res) => {
-  res.render('admin/views/auth-management/index', { 
-    title: 'Authentication Management - UGO',
-    user: req.user,
-    currentPath: req.path
-  });
-});
-
-// API Documentation page (protected)
+// API Documentation
 router.get('/api-docs', webAuthenticate, webAdminOnly, (req, res) => {
-  res.render('admin/views/api-docs/index', { 
-    title: 'API Documentation - UGO',
+  res.render('admin/views/api-docs/index', {
+    title: 'API Documentation - UGO Admin',
     user: req.user,
-    currentPath: req.path
+    currentPath: '/api-docs'
   });
 });
-
-// Settings page (protected)
-router.get('/settings', webAuthenticate, webAdminOnly, (req, res) => {
-  res.render('admin/views/settings/index', { 
-    title: 'Settings - UGO',
-    user: req.user,
-    currentPath: req.path
-  });
-});
-
-// Logout - Use auth module
-router.post('/auth/logout', require('../modules/auth/routes/auth'));
-
-// API routes for authentication
-router.use('/auth', require('../modules/auth/routes/auth'));
 
 module.exports = router;

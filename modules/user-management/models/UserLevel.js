@@ -230,4 +230,4 @@ userLevelSchema.pre('save', async function(next) {
   next();
 });
 
-module.exports = mongoose.model('CustomerLevel', userLevelSchema);
+module.exports = mongoose.model('UserLevel', userLevelSchema);

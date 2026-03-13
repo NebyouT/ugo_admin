@@ -32,7 +32,8 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
-    minlength: 6
+    minlength: 6,
+    select: false
   },
   
   // User Type and Role
@@ -53,7 +54,7 @@ const userSchema = new mongoose.Schema({
   // Role Management
   role: {
     type: String,
-    enum: ['customer', 'driver', 'admin', 'employee'],
+    enum: ['customer', 'driver', 'admin', 'employee', 'parent'],
     default: 'customer'
   },
   
@@ -148,6 +149,7 @@ const userSchema = new mongoose.Schema({
     licenseNumber: String,
     licenseExpiry: Date,
     licenseImage: String,
+    vehicleType: String,
     vehicleAssigned: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Vehicle',
@@ -158,6 +160,17 @@ const userSchema = new mongoose.Schema({
     serviceArea: String,
     rating: { type: Number, default: 0, min: 0, max: 5 }
   },
+  
+  // Parent/Customer Specific Fields
+  children: [{
+    firstName: String,
+    lastName: String,
+    age: Number,
+    gender: { type: String, enum: ['male', 'female', 'other', ''] },
+    grade: String,
+    dateOfBirth: Date,
+    medicalInfo: String
+  }],
   
   // System Fields
   isActive: {
@@ -214,11 +227,38 @@ const userSchema = new mongoose.Schema({
     default: 0
   },
   lastLoginAt: Date,
+  lockUntil: {
+    type: Date,
+    default: null
+  },
   isTempBlocked: {
     type: Boolean,
     default: false
   },
   tempBlockedUntil: Date,
+  
+  // Account status
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'suspended', 'deleted', 'pending'],
+    default: 'active'
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  
+  // Account deletion
+  deletionDate: Date,
+  deletionReason: String,
+  deletionFeedback: String,
+  
+  // OTP tracking
+  otpAttempts: {
+    type: Number,
+    default: 0
+  },
+  lastOTPSent: Date,
   
   // OTP Fields
   otp: {
@@ -231,7 +271,8 @@ const userSchema = new mongoose.Schema({
   },
   otpPurpose: {
     type: String,
-    enum: ['registration', 'password_reset', 'login_verification', 'phone_verification'],
+    enum: [null, 'registration', 'password_reset', 'login_verification', 'phone_verification'],
+    default: null,
     required: false
   },
   otpGeneratedAt: {
@@ -411,6 +452,87 @@ userSchema.statics.getCustomerStats = function() {
       }
     }
   ]);
+};
+
+// Create admin user if none exists
+userSchema.statics.createAdminIfNotExists = async function() {
+  try {
+    const existingAdmin = await this.findOne({ role: 'admin' });
+    
+    if (!existingAdmin) {
+      const adminUser = new this({
+        firstName: process.env.ADMIN_FIRST_NAME || 'Admin',
+        lastName: process.env.ADMIN_LAST_NAME || 'User',
+        email: process.env.ADMIN_EMAIL || 'admin@ugo.com',
+        phone: '0900000000',
+        password: process.env.ADMIN_PASSWORD || '12345678',
+        role: 'admin',
+        userType: 'admin',
+        isActive: true,
+        status: 'active',
+        emailVerified: true,
+        isEmailVerified: true,
+        isPhoneVerified: true
+      });
+      
+      await adminUser.save();
+      console.log('Default admin user created: admin@ugo.com / 12345678');
+      return adminUser;
+    }
+    
+    return existingAdmin;
+  } catch (error) {
+    console.error('Error creating admin user:', error);
+  }
+};
+
+// Find by credentials (login attempt tracking disabled)
+userSchema.statics.findByCredentials = async function(email, password) {
+  const user = await this.findOne({ email }).select('+password');
+  
+  if (!user) {
+    throw new Error('Invalid credentials');
+  }
+  
+  // Check if account is active
+  if (!user.isActive || user.status === 'suspended') {
+    throw new Error('Account is not active');
+  }
+  
+  const isMatch = await user.comparePassword(password);
+  
+  if (!isMatch) {
+    // Track failed attempts but don't lock account
+    user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+    await user.save();
+    throw new Error('Invalid credentials');
+  }
+  
+  // Reset failed attempts on success
+  if (user.failedLoginAttempts > 0) {
+    user.failedLoginAttempts = 0;
+    user.lockUntil = null;
+  }
+  user.lastLoginAt = new Date();
+  await user.save();
+  
+  return user;
+};
+
+// Get user statistics
+userSchema.statics.getStats = async function() {
+  const total = await this.countDocuments();
+  const active = await this.countDocuments({ isActive: true });
+  const stats = await this.aggregate([
+    { $group: { _id: '$role', count: { $sum: 1 } } }
+  ]);
+  
+  return {
+    total,
+    active,
+    inactive: total - active,
+    byRole: stats.reduce((acc, s) => { acc[s._id] = s.count; return acc; }, {})
+  };
 };
 
 module.exports = mongoose.model('User', userSchema);

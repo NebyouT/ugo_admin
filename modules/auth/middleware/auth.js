@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+// Use the canonical User model from user-management module
 const User = require('../../user-management/models/User');
 
 // Authentication middleware
