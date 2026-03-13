@@ -109,6 +109,42 @@ router.get('/drivers', webAuthenticate, webAdminOnly, (req, res) => {
   });
 });
 
+// Children Management
+router.get('/children', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/children/index', {
+    title: 'Children Management - UGO Admin',
+    user: req.user,
+    currentPath: '/children'
+  });
+});
+
+// Profile Settings
+router.get('/profile', webAuthenticate, (req, res) => {
+  res.render('admin/views/profile/index', {
+    title: 'Profile Settings - UGO Admin',
+    user: req.user,
+    currentPath: '/profile'
+  });
+});
+
+// Integrations (3rd Party Services)
+router.get('/integrations', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/integrations/index', {
+    title: 'Third-Party Integrations - UGO Admin',
+    user: req.user,
+    currentPath: '/integrations'
+  });
+});
+
+// Schools Management
+router.get('/schools', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/schools/index', {
+    title: 'Schools Management - UGO Admin',
+    user: req.user,
+    currentPath: '/schools'
+  });
+});
+
 // API Documentation
 router.get('/api-docs', webAuthenticate, webAdminOnly, (req, res) => {
   res.render('admin/views/api-docs/index', {

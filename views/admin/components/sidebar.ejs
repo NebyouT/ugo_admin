@@ -217,6 +217,33 @@ const isActiveGroup = (prefix) => cp.startsWith(prefix);
                     <i class="fas fa-id-card"></i> Drivers
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link <%= isActive('/children') ? 'active' : '' %>" href="/admin/children">
+                    <i class="fas fa-child"></i> Children
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <%= isActive('/schools') ? 'active' : '' %>" href="/admin/schools">
+                    <i class="fas fa-school"></i> Schools
+                </a>
+            </li>
+        </ul>
+
+        <div class="nav-divider"></div>
+
+        <!-- Settings -->
+        <div class="nav-section-label">Settings</div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link <%= isActive('/profile') ? 'active' : '' %>" href="/admin/profile">
+                    <i class="fas fa-user-cog"></i> Profile Settings
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <%= isActive('/integrations') ? 'active' : '' %>" href="/admin/integrations">
+                    <i class="fas fa-plug"></i> 3rd Party Integrations
+                </a>
+            </li>
         </ul>
 
         <div class="nav-divider"></div>

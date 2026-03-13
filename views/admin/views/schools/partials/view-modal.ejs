@@ -1,0 +1,86 @@
+<div class="modal fade" id="viewSchoolModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-school me-2"></i>School Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <h6 id="viewName" class="mb-1">-</h6>
+                        <div class="text-muted small" id="viewType">-</div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <span class="badge bg-success" id="viewStatus">Active</span>
+                    </div>
+                    
+                    <div class="col-12"><hr></div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">Address</label>
+                        <div id="viewAddress">-</div>
+                        <div class="text-muted small" id="viewCity">-</div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">Contact</label>
+                        <div id="viewPhone">-</div>
+                        <div class="text-muted small" id="viewEmail">-</div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label text-muted small">Grades</label>
+                        <div id="viewGrades">-</div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label text-muted small">Students</label>
+                        <div id="viewCapacity">-</div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label text-muted small">Coordinates</label>
+                        <div class="font-monospace small" id="viewCoordinates">-</div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label class="form-label text-muted small">Description</label>
+                        <div id="viewDescription">-</div>
+                    </div>
+                    
+                    <div class="col-12 mt-3">
+                        <div id="viewMap" style="height: 300px; border-radius: 8px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let viewMap, viewMarker;
+
+function initViewMap(lat, lng, name) {
+    if (!googleMapsApiKey || !window.google) return;
+    
+    const position = { lat, lng };
+    
+    viewMap = new google.maps.Map(document.getElementById('viewMap'), {
+        center: position,
+        zoom: 15,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false
+    });
+    
+    viewMarker = new google.maps.Marker({
+        position: position,
+        map: viewMap,
+        title: name
+    });
+}
+</script>

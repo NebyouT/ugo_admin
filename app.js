@@ -87,6 +87,12 @@ app.use('/api/users', require('./modules/user-management/routes/userManagement')
 // Children API
 app.use('/api/children', require('./modules/children/routes/children'));
 
+// Integrations API (3rd party services)
+app.use('/api/integrations', require('./modules/integrations/routes/integrations'));
+
+// Schools API
+app.use('/api/schools', require('./modules/schools/routes/schools'));
+
 // API Docs
 app.use('/api/docs', require('./modules/api-docs/routes/apiDocs'));
 
@@ -128,6 +134,10 @@ app.use((err, req, res, next) => {
 // Start server
 const startServer = async () => {
   await connectDB();
+  
+  // Initialize default integrations
+  const initIntegrations = require('./modules/integrations/migrations/init-defaults');
+  await initIntegrations();
   
   const PORT = process.env.PORT || 3001;
   app.listen(PORT, () => {

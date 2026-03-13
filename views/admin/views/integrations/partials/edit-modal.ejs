@@ -1,0 +1,123 @@
+<div class="modal fade" id="editIntegrationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalTitle">Add Integration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editIntegrationForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Key Name *</label>
+                            <input type="text" class="form-control" id="editKeyName" required placeholder="e.g., google_maps">
+                            <small class="text-muted">Unique identifier (lowercase, underscores only)</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Settings Type *</label>
+                            <select class="form-select" id="editSettingsType" required>
+                                <option value="">Select Type</option>
+                                <option value="map_api">Map API</option>
+                                <option value="sms_gateway">SMS Gateway</option>
+                                <option value="payment_gateway">Payment Gateway</option>
+                                <option value="push_notification">Push Notification</option>
+                                <option value="email_config">Email Config</option>
+                                <option value="storage">Storage</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-control" id="editDescription" placeholder="Brief description of this integration">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Configuration (JSON) *</label>
+                            <textarea class="form-control font-monospace" id="editValue" rows="8" required placeholder='{"api_key": "YOUR_API_KEY_HERE"}'></textarea>
+                            <small class="text-muted">Enter configuration as valid JSON</small>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="editIsActive">
+                                <label class="form-check-label" for="editIsActive">
+                                    Active (enable this integration)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Templates -->
+                    <div class="mt-3">
+                        <label class="form-label">Quick Templates:</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="applyTemplate('google_maps')">Google Maps</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="applyTemplate('afro_sms')">Afro SMS</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="applyTemplate('firebase')">Firebase FCM</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="applyTemplate('stripe')">Stripe</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveIntegration()"><i class="fas fa-save me-1"></i>Save Integration</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function applyTemplate(type) {
+    const templates = {
+        google_maps: {
+            keyName: 'google_maps',
+            settingsType: 'map_api',
+            description: 'Google Maps API for geolocation, directions, and geocoding',
+            value: {
+                api_key: 'YOUR_GOOGLE_MAPS_API_KEY',
+                enable_places: true,
+                enable_directions: true,
+                enable_geocoding: true,
+                enable_distance_matrix: true
+            }
+        },
+        afro_sms: {
+            keyName: 'afro_sms',
+            settingsType: 'sms_gateway',
+            description: 'Afro SMS Gateway for Ethiopia',
+            value: {
+                api_key: 'YOUR_AFRO_SMS_API_KEY',
+                sender_id: 'UGO',
+                api_url: 'https://api.afrosms.com/send'
+            }
+        },
+        firebase: {
+            keyName: 'firebase_fcm',
+            settingsType: 'push_notification',
+            description: 'Firebase Cloud Messaging for push notifications',
+            value: {
+                server_key: 'YOUR_FCM_SERVER_KEY',
+                sender_id: 'YOUR_SENDER_ID',
+                project_id: 'YOUR_PROJECT_ID'
+            }
+        },
+        stripe: {
+            keyName: 'stripe',
+            settingsType: 'payment_gateway',
+            description: 'Stripe Payment Gateway',
+            value: {
+                publishable_key: 'pk_test_...',
+                secret_key: 'sk_test_...',
+                webhook_secret: 'whsec_...'
+            }
+        }
+    };
+
+    const template = templates[type];
+    if (template) {
+        document.getElementById('editKeyName').value = template.keyName;
+        document.getElementById('editSettingsType').value = template.settingsType;
+        document.getElementById('editDescription').value = template.description;
+        document.getElementById('editValue').value = JSON.stringify(template.value, null, 2);
+    }
+}
+</script>
