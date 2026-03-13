@@ -194,6 +194,11 @@ const userSchema = new mongoose.Schema({
     default: null
   },
   
+  // Phone Change Fields
+  pendingPhone: String,
+  phoneChangeOTP: String,
+  phoneChangeOTPExpiry: Date,
+  
   // Authentication Tokens
   fcmToken: String,
   refreshToken: String,

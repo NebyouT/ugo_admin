@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const { setupSwagger } = require('./config/swagger');
 
 // Load environment variables
 dotenv.config();
@@ -77,14 +78,23 @@ app.use('/api/auth', require('./modules/auth/routes/apiAuth'));
 // Admin Auth API (protected admin operations)
 app.use('/api/admin/auth', require('./modules/auth/routes/adminAuth'));
 
-// User management API
+// User Profile API (update profile, phone change)
+app.use('/api/users', require('./modules/auth/routes/profileRoutes'));
+
+// User management API (admin)
 app.use('/api/users', require('./modules/user-management/routes/userManagement'));
+
+// Children API
+app.use('/api/children', require('./modules/children/routes/children'));
 
 // API Docs
 app.use('/api/docs', require('./modules/api-docs/routes/apiDocs'));
 
 // General API routes
 app.use('/api', require('./routes/api'));
+
+// Swagger UI
+setupSwagger(app);
 
 // ============================================
 // WEB ROUTES (admin dashboard)
@@ -125,6 +135,7 @@ const startServer = async () => {
     console.log(`Health: http://localhost:${PORT}/health`);
     console.log(`Admin:  http://localhost:${PORT}/admin/login`);
     console.log(`API:    http://localhost:${PORT}/api/auth`);
+    console.log(`Swagger: http://localhost:${PORT}/api-docs`);
   });
 };
 
