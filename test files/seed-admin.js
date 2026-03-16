@@ -1,6 +1,6 @@
 // This script will be called from the running server
 const createAdminUser = async () => {
-  const User = require('./modules/user-management/models/User');
+  const User = require('../modules/user-management/models/User');
   const bcrypt = require('bcryptjs');
   
   try {

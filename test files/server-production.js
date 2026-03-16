@@ -101,13 +101,13 @@ app.get('/health', (req, res) => {
 });
 
 // API Routes (MUST come after static files)
-app.use('/api', require('./routes/api'));
-app.use('/api/auth', require('./modules/auth/routes/apiAuth'));
-app.use('/api/admin/auth', require('./modules/auth/routes/adminAuth'));
+app.use('/api', require('../routes/api'));
+app.use('/api/auth', require('../modules/auth/routes/apiAuth'));
+app.use('/api/admin/auth', require('../modules/auth/routes/adminAuth'));
 
 // Page Routes (MUST come last to avoid conflicts with static files)
-app.use('/', require('./routes/web'));
-app.use('/admin', require('./routes/admin'));
+app.use('/', require('../routes/web'));
+app.use('/admin', require('../routes/admin'));
 
 // Development routes (remove in production)
 if (process.env.NODE_ENV !== 'production') {
@@ -165,7 +165,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // User Management API Routes
-app.use('/api/users', require('./modules/user-management/routes/userManagement'));
+app.use('/api/users', require('../modules/user-management/routes/userManagement'));
 
 // Start server
 const startServer = async () => {

@@ -1,6 +1,6 @@
 // This script will reset the admin user
 const resetAdminUser = async () => {
-  const User = require('./modules/user-management/models/User');
+  const User = require('../modules/user-management/models/User');
   const bcrypt = require('bcryptjs');
   
   try {

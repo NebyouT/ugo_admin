@@ -1,0 +1,311 @@
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Group Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewModalBody">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading group details...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="editFromViewBtn">
+                    <i class="fas fa-edit me-1"></i>Edit Group
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// View group details
+async function viewGroupDetails(groupId) {
+    try {
+        const res = await fetch(`/api/groups/${groupId}`, { credentials: 'include' });
+        const data = await res.json();
+        
+        if (data.success) {
+            const group = data.data.group;
+            renderGroupDetails(group);
+            
+            // Setup edit button
+            document.getElementById('editFromViewBtn').onclick = () => {
+                bootstrap.Modal.getInstance(document.getElementById('viewModal')).hide();
+                editGroup(groupId);
+            };
+            
+            new bootstrap.Modal(document.getElementById('viewModal')).show();
+        } else {
+            showToast('Failed to load group details', 'danger');
+        }
+    } catch (error) {
+        console.error('View group error:', error);
+        showToast('Failed to load group details', 'danger');
+    }
+}
+
+function renderGroupDetails(group) {
+    const modalBody = document.getElementById('viewModalBody');
+    
+    const statusClass = {
+        'open': 'bg-success',
+        'full': 'bg-warning',
+        'inactive': 'bg-secondary',
+        'cancelled': 'bg-danger'
+    }[group.status] || 'bg-secondary';
+    
+    const spotsLeft = group.capacity - group.current_members;
+    const spotsClass = spotsLeft > 0 ? 'text-success' : 'text-danger';
+    
+    // Format schedule
+    const scheduleHtml = group.schedule ? `
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <h6 class="text-muted">Pickup Time</h6>
+                <p class="mb-0"><i class="fas fa-clock"></i> ${group.schedule.pickup_time || 'N/A'}</p>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-muted">Drop Time</h6>
+                <p class="mb-0"><i class="fas fa-clock"></i> ${group.schedule.drop_time || 'N/A'}</p>
+            </div>
+        </div>
+        <div class="mb-3">
+            <h6 class="text-muted">Operating Days</h6>
+            <div class="d-flex flex-wrap gap-1">
+                ${(group.schedule.days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']).map(day => 
+                    `<span class="badge bg-light text-dark">${day.substring(0, 3)}</span>`
+                ).join('')}
+            </div>
+        </div>
+    ` : '';
+    
+    // Driver information
+    const driverHtml = group.driver ? `
+        <div class="card mb-3">
+            <div class="card-body">
+                <h6 class="card-title mb-3">
+                    <i class="fas fa-user-tie"></i> Driver Information
+                </h6>
+                <div class="d-flex align-items-center mb-3">
+                    <img src="${group.driver.photo || '/images/default-avatar.png'}" 
+                         class="rounded-circle me-3" 
+                         style="width: 60px; height: 60px; object-fit: cover;">
+                    <div>
+                        <h6 class="mb-1">${group.driver.name}</h6>
+                        <p class="mb-0"><i class="fas fa-phone"></i> ${group.driver.phone || 'N/A'}</p>
+                        <p class="mb-0"><i class="fas fa-star text-warning"></i> ${group.driver.rating || 0}/5</p>
+                    </div>
+                </div>
+                ${group.driver.vehicle ? `
+                    <div class="row">
+                        <div class="col-md-4">
+                            <small class="text-muted">Vehicle Type</small>
+                            <p class="mb-0">${group.driver.vehicle.type || 'N/A'}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Color</small>
+                            <p class="mb-0">${group.driver.vehicle.color || 'N/A'}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Plate</small>
+                            <p class="mb-0">${group.driver.vehicle.plate || 'N/A'}</p>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    ` : `
+        <div class="card mb-3">
+            <div class="card-body">
+                <h6 class="card-title mb-3">
+                    <i class="fas fa-user-tie"></i> Driver Information
+                </h6>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No driver assigned yet
+                    ${group.voting && group.voting.status === 'active' ? 
+                        '<br><small>Voting is in progress for driver selection</small>' : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Voting information (if no driver)
+    const votingHtml = !group.driver && group.voting && group.voting.status === 'active' ? `
+        <div class="card mb-3">
+            <div class="card-body">
+                <h6 class="card-title mb-3">
+                    <i class="fas fa-vote-yea"></i> Driver Voting
+                </h6>
+                <p class="mb-2"><strong>Status:</strong> Active</p>
+                ${group.voting.deadline ? 
+                    `<p class="mb-2"><strong>Deadline:</strong> ${new Date(group.voting.deadline).toLocaleString()}</p>` : ''}
+                ${group.voting.candidates && group.voting.candidates.length > 0 ? `
+                    <h6 class="mt-3">Candidates:</h6>
+                    <div class="list-group">
+                        ${group.voting.candidates.map(candidate => `
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${candidate.name}</h6>
+                                    <small class="text-muted">Votes: ${candidate.votes || 0}</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="progress" style="width: 100px;">
+                                        <div class="progress-bar bg-success" style="width: ${((candidate.votes || 0) / Math.max(...group.voting.candidates.map(c => c.votes || 0))) * 100}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    ` : '';
+    
+    modalBody.innerHTML = `
+        <div class="row">
+            <div class="col-md-8">
+                <h4 class="mb-3">${group.name}</h4>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">School</h6>
+                        <p class="mb-0">
+                            <i class="fas fa-school"></i> ${group.school?.name || 'N/A'}
+                        </p>
+                        ${group.school?.address ? 
+                            `<small class="text-muted">${group.school.address.city || group.school.address.region || 'Unknown'}</small>` : ''}
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Status</h6>
+                        <span class="badge ${statusClass}">${group.status}</span>
+                    </div>
+                </div>
+                
+                ${scheduleHtml}
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <h6 class="text-muted">Capacity</h6>
+                        <p class="mb-0">${group.current_members || 0}/${group.capacity}</p>
+                        <small class="${spotsClass}">${spotsLeft} spots left</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-muted">Base Price</h6>
+                        <p class="mb-0">ETB ${group.base_price || 0}</p>
+                        <small class="text-muted">per month</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-muted">Service Radius</h6>
+                        <p class="mb-0">${group.service_radius || 5} km</p>
+                    </div>
+                </div>
+                
+                ${group.description ? `
+                    <div class="mb-3">
+                        <h6 class="text-muted">Description</h6>
+                        <p class="mb-0">${group.description}</p>
+                    </div>
+                ` : ''}
+                
+                ${driverHtml}
+                ${votingHtml}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Created</h6>
+                        <p class="mb-0">${group.createdAt ? new Date(group.createdAt).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Last Updated</h6>
+                        <p class="mb-0">${group.updatedAt ? new Date(group.updatedAt).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-chart-pie"></i> Group Statistics
+                        </h6>
+                        
+                        <div class="text-center mb-3">
+                            <div class="progress-circle" style="position: relative; width: 120px; height: 120px; margin: 0 auto;">
+                                <svg width="120" height="120">
+                                    <circle cx="60" cy="60" r="50" fill="none" stroke="#e9ecef" stroke-width="10"/>
+                                    <circle cx="60" cy="60" r="50" fill="none" stroke="#28a745" stroke-width="10"
+                                            stroke-dasharray="${(group.current_members / group.capacity) * 314}"
+                                            stroke-dashoffset="0"
+                                            transform="rotate(-90 60 60)"/>
+                                </svg>
+                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                                    <h5 class="mb-0">${group.current_members || 0}</h5>
+                                    <small class="text-muted">of ${group.capacity}</small>
+                                </div>
+                            </div>
+                            <small class="text-muted">Enrollment</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Occupancy</span>
+                                <strong>${Math.round((group.current_members / group.capacity) * 100)}%</strong>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar ${spotsLeft > 0 ? 'bg-success' : 'bg-warning'}" 
+                                     style="width: ${(group.current_members / group.capacity) * 100}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Spots Available</span>
+                                <strong class="${spotsClass}">${spotsLeft}</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Monthly Price</span>
+                                <strong>ETB ${group.base_price || 0}</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Service Area</span>
+                                <strong>${group.service_radius || 5} km</strong>
+                            </div>
+                        </div>
+                        
+                        ${group.status === 'open' && spotsLeft > 0 ? 
+                            '<div class="alert alert-success mb-0"><i class="fas fa-check-circle"></i> Accepting new members</div>' : 
+                            group.status === 'full' ? 
+                                '<div class="alert alert-warning mb-0"><i class="fas fa-exclamation-triangle"></i> Group is full</div>' :
+                            '<div class="alert alert-secondary mb-0"><i class="fas fa-pause-circle"></i> Not accepting members</div>'
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Update the existing viewGroup function to use the modal
+function viewGroup(id) {
+    viewGroupDetails(id);
+}
+</script>
+
+<style>
+.progress-circle circle {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
+</style>

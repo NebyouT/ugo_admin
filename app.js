@@ -93,6 +93,12 @@ app.use('/api/integrations', require('./modules/integrations/routes/integrations
 // Schools API
 app.use('/api/schools', require('./modules/schools/routes/schools'));
 
+// Groups API
+app.use('/api/groups', require('./modules/groups/routes/groups'));
+
+// Zones API
+app.use('/api/zones', require('./modules/zone-management/routes/zones'));
+
 // API Docs
 app.use('/api/docs', require('./modules/api-docs/routes/apiDocs'));
 

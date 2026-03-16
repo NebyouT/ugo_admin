@@ -145,6 +145,94 @@ router.get('/schools', webAuthenticate, webAdminOnly, (req, res) => {
   });
 });
 
+// Groups Management
+router.get('/groups', webAuthenticate, webAdminOnly, async (req, res) => {
+  let schools = []; // Always define schools as empty array first
+  
+  try {
+    console.log('Loading schools for groups page...');
+    
+    // Pre-load schools for the form
+    const School = require('../modules/schools/models/School');
+    schools = await School.find({ isDeleted: false, isActive: true })
+      .select('name address city _id')
+      .sort({ name: 1 });
+    
+    console.log(`Found ${schools.length} schools for groups page`);
+    
+    res.render('admin/views/groups/index', {
+      title: 'Groups Management - UGO Admin',
+      user: req.user,
+      currentPath: '/groups',
+      schools: schools // Always pass schools (could be empty array)
+    });
+  } catch (error) {
+    console.error('Error loading schools for groups page:', error);
+    // Ensure schools is defined even on error
+    schools = [];
+    
+    res.render('admin/views/groups/index', {
+      title: 'Groups Management - UGO Admin',
+      user: req.user,
+      currentPath: '/groups',
+      schools: schools // Pass empty array on error
+    });
+  }
+});
+
+// Zones Management
+router.get('/zones', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/zones/index', {
+    title: 'Zones Management - UGO Admin',
+    user: req.user,
+    currentPath: '/zones'
+  });
+});
+
+router.get('/zones/create', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/zones/create', {
+    title: 'Create Zone - UGO Admin',
+    user: req.user,
+    currentPath: '/zones'
+  });
+});
+
+router.get('/zones/view/:id', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/zones/view', {
+    title: 'Zone Details - UGO Admin',
+    user: req.user,
+    currentPath: '/zones'
+  });
+});
+
+router.get('/zones/edit/:id', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/zones/edit', {
+    title: 'Edit Zone - UGO Admin',
+    user: req.user,
+    currentPath: '/zones'
+  });
+});
+
+// Google Maps API key endpoint for frontend
+router.get('/integrations/google-maps/key', webAuthenticate, webAdminOnly, async (req, res) => {
+  try {
+    const GoogleMapsService = require('../modules/integrations/services/GoogleMapsService');
+    const apiKey = await GoogleMapsService.getAPIKey();
+    
+    res.json({
+      success: true,
+      data: {
+        apiKey: apiKey
+      }
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // API Documentation
 router.get('/api-docs', webAuthenticate, webAdminOnly, (req, res) => {
   res.render('admin/views/api-docs/index', {

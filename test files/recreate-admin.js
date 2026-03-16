@@ -1,6 +1,6 @@
 // This script will recreate the admin user with a fresh password
 const recreateAdminUser = async () => {
-  const User = require('./modules/user-management/models/User');
+  const User = require('../modules/user-management/models/User');
   const bcrypt = require('bcryptjs');
   
   try {

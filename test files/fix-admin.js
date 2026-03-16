@@ -1,6 +1,6 @@
 // This script will fix the existing admin user
 const fixAdminUser = async () => {
-  const User = require('./modules/user-management/models/User');
+  const User = require('../modules/user-management/models/User');
   
   try {
     // Find existing admin user

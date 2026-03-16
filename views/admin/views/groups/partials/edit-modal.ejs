@@ -1,0 +1,204 @@
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalTitle">Add New Group</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editId">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Group Name *</label>
+                                <input type="text" class="form-control" id="editName" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">School *</label>
+                                <select class="form-select" id="editSchool" required>
+                                    <option value="">Loading schools...</option>
+                                </select>
+                                <div class="form-text">Select from existing schools in the system</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Capacity *</label>
+                                <input type="number" class="form-control" id="editCapacity" min="1" max="15" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Pickup Time *</label>
+                                <input type="time" class="form-control" id="editPickupTime" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Drop Time *</label>
+                                <input type="time" class="form-control" id="editDropTime" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Base Price (ETB) *</label>
+                                <input type="number" class="form-control" id="editBasePrice" min="0" step="100" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" id="editStatus">
+                                    <option value="open">Open</option>
+                                    <option value="full">Full</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Operating Days</label>
+                        <div class="row">
+                            <div class="col-6 col-md-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="Monday" id="day1" checked>
+                                    <label class="form-check-label" for="day1">Mon</label>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="Tuesday" id="day2" checked>
+                                    <label class="form-check-label" for="day2">Tue</label>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="Wednesday" id="day3" checked>
+                                    <label class="form-check-label" for="day3">Wed</label>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="Thursday" id="day4" checked>
+                                    <label class="form-check-label" for="day4">Thu</label>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="Friday" id="day5" checked>
+                                    <label class="form-check-label" for="day5">Fri</label>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="Saturday" id="day6">
+                                    <label class="form-check-label" for="day6">Sat</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveGroup()">
+                    <i class="fas fa-save me-1"></i>Save Group
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load schools when page loads
+let schoolsLoaded = false;
+
+async function loadSchools() {
+    if (schoolsLoaded) return;
+    
+    const schoolSelect = document.getElementById('editSchool');
+    
+    // First, try to use pre-loaded data from server
+    if (window.pageData && window.pageData.schools && window.pageData.schools.length > 0) {
+        populateSchoolsFromPageData();
+        return;
+    }
+    
+    // Fallback to API call if no pre-loaded data
+    try {
+        schoolSelect.innerHTML = '<option value="">Loading schools...</option>';
+        
+        const res = await fetch('/api/schools', { 
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
+        console.log('Schools API Status:', res.status);
+        
+        if (res.status === 401) {
+            // Authentication issue - provide manual option
+            console.log('Authentication required for schools API');
+            schoolSelect.innerHTML = '<option value="">Please refresh page to login</option>';
+            schoolSelect.disabled = true;
+            return;
+        }
+        
+        const data = await res.json();
+        console.log('Schools response:', data);
+        
+        if (data.success && data.data && data.data.schools && data.data.schools.length > 0) {
+            schoolSelect.innerHTML = '<option value="">Select School</option>' + 
+                data.data.schools.map(school => {
+                    const location = school.address?.city || school.address?.region || 'Unknown';
+                    return `<option value="${school._id}">${school.name} - ${location}</option>`;
+                }).join('');
+            schoolsLoaded = true;
+            console.log('Schools loaded successfully:', data.data.schools.length, 'schools');
+        } else {
+            schoolSelect.innerHTML = '<option value="">No schools found</option>';
+            schoolSelect.disabled = true;
+            console.log('No schools found in response');
+        }
+    } catch (error) {
+        console.error('Failed to load schools:', error);
+        schoolSelect.innerHTML = '<option value="">Failed to load schools</option>';
+        schoolSelect.disabled = true;
+    }
+}
+
+function populateSchoolsFromPageData() {
+    // Use pre-loaded schools data from server
+    const schoolSelect = document.getElementById('editSchool');
+    if (window.pageData && window.pageData.schools) {
+        schoolSelect.innerHTML = '<option value="">Select School</option>' + 
+            window.pageData.schools.map(school => {
+                const location = school.address?.city || school.address?.region || 'Unknown';
+                return `<option value="${school._id}">${school.name} - ${location}</option>`;
+            }).join('');
+        schoolsLoaded = true;
+        console.log('Schools loaded from page data:', window.pageData.schools.length, 'schools');
+    }
+}
+
+// Load schools when modal is shown
+document.getElementById('editModal').addEventListener('show.bs.modal', async function() {
+    await loadSchools();
+});
+
+// Also load schools on page load
+document.addEventListener('DOMContentLoaded', loadSchools);
+</script>

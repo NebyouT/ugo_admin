@@ -227,6 +227,16 @@ const isActiveGroup = (prefix) => cp.startsWith(prefix);
                     <i class="fas fa-school"></i> Schools
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link <%= isActive('/groups') ? 'active' : '' %>" href="/admin/groups">
+                    <i class="fas fa-users"></i> Groups
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <%= isActive('/zones') ? 'active' : '' %>" href="/admin/zones">
+                    <i class="fas fa-map-marked-alt"></i> Zones
+                </a>
+            </li>
         </ul>
 
         <div class="nav-divider"></div>

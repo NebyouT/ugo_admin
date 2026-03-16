@@ -104,6 +104,27 @@ router.get('/:keyName', authenticate, IntegrationController.getOne);
 
 /**
  * @swagger
+ * /api/integrations/{keyName}/public:
+ *   get:
+ *     summary: Get integration by key name (public - no auth required)
+ *     tags: [Integrations]
+ *     parameters:
+ *       - in: path
+ *         name: keyName
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Integration key name (e.g., google_maps, afro_sms)
+ *     responses:
+ *       200:
+ *         description: Integration details
+ *       404:
+ *         description: Integration not found
+ */
+router.get('/:keyName/public', IntegrationController.getOne);
+
+/**
+ * @swagger
  * /api/integrations/{keyName}:
  *   put:
  *     summary: Create or update integration
