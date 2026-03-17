@@ -129,19 +129,84 @@ const userSchema = new mongoose.Schema({
   
   // Parent Specific Fields
   parentInfo: {
-    occupation: String,
-    company: String,
+    occupation: {
+      type: String,
+      trim: true,
+      maxlength: [100, 'Occupation cannot exceed 100 characters']
+    },
+    company: {
+      type: String,
+      trim: true,
+      maxlength: [100, 'Company name cannot exceed 100 characters']
+    },
     workAddress: {
       street: String,
       city: String,
       state: String,
-      zipCode: String
+      zipCode: String,
+      coordinates: {
+        latitude: Number,
+        longitude: Number
+      }
     },
     emergencyContacts: [{
-      name: String,
-      phone: String,
-      relationship: String
-    }]
+      name: {
+        type: String,
+        trim: true,
+        maxlength: [100, 'Emergency contact name cannot exceed 100 characters']
+      },
+      phone: {
+        type: String,
+        trim: true,
+        validate: {
+          validator: function(phone) {
+            return !phone || /^[+]?[\d\s\-\(\)]+$/.test(phone);
+          },
+          message: 'Invalid phone number format'
+        }
+      },
+      relationship: {
+        type: String,
+        trim: true,
+        maxlength: [50, 'Relationship cannot exceed 50 characters']
+      },
+      isPrimary: {
+        type: Boolean,
+        default: false
+      }
+    }],
+    preferences: {
+      language: {
+        type: String,
+        enum: ['english', 'amharic', 'oromo', 'tigrinya'],
+        default: 'english'
+      },
+      timezone: {
+        type: String,
+        default: 'Africa/Addis_Ababa'
+      },
+      currency: {
+        type: String,
+        enum: ['ETB', 'USD'],
+        default: 'ETB'
+      },
+      distanceUnit: {
+        type: String,
+        enum: ['km', 'miles'],
+        default: 'km'
+      }
+    },
+    familySize: {
+      type: Number,
+      min: 1,
+      max: 20,
+      default: 1
+    },
+    preferredCommunication: {
+      type: String,
+      enum: ['email', 'phone', 'sms', 'whatsapp'],
+      default: 'email'
+    }
   },
   
   // Driver Specific Fields
@@ -202,6 +267,46 @@ const userSchema = new mongoose.Schema({
   // Authentication Tokens
   fcmToken: String,
   refreshToken: String,
+  
+  // Notification Preferences
+  notificationPreferences: {
+    email: {
+      type: Boolean,
+      default: true
+    },
+    sms: {
+      type: Boolean,
+      default: true
+    },
+    push: {
+      type: Boolean,
+      default: true
+    },
+    pickupReminders: {
+      type: Boolean,
+      default: true
+    },
+    dropoffReminders: {
+      type: Boolean,
+      default: true
+    },
+    subscriptionUpdates: {
+      type: Boolean,
+      default: true
+    },
+    driverUpdates: {
+      type: Boolean,
+      default: true
+    },
+    paymentReminders: {
+      type: Boolean,
+      default: true
+    },
+    promotionalOffers: {
+      type: Boolean,
+      default: false
+    }
+  },
   
   // Loyalty and Points
   loyaltyPoints: {
@@ -457,6 +562,71 @@ userSchema.statics.getCustomerStats = function() {
       }
     }
   ]);
+};
+
+// Parent-specific static methods
+userSchema.statics.findParents = function(filters = {}) {
+  const query = { userType: 'parent', isActive: true, ...filters };
+  return this.find(query).select('-password').sort({ createdAt: -1 });
+};
+
+userSchema.statics.getParentStats = function() {
+  return this.aggregate([
+    { $match: { userType: 'parent', isActive: true } },
+    {
+      $group: {
+        _id: null,
+        totalParents: { $sum: 1 },
+        activeParents: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } },
+        parentsWithChildren: {
+          $sum: {
+            $cond: [{ $gt: ['$familySize', 1] }, 1, 0]
+          }
+        }
+      }
+    }
+  ]);
+};
+
+userSchema.statics.createParentIfNotExists = async function(parentData) {
+  try {
+    const existingParent = await this.findOne({ 
+      $or: [
+        { email: parentData.email.toLowerCase() },
+        { phone: parentData.phone }
+      ]
+    });
+    
+    if (existingParent) {
+      return existingParent;
+    }
+
+    const parent = new this({
+      firstName: parentData.firstName,
+      lastName: parentData.lastName,
+      email: parentData.email,
+      phone: parentData.phone,
+      password: parentData.password,
+      userType: 'parent',
+      role: 'parent',
+      customerType: 'parent',
+      isActive: true,
+      status: 'active',
+      emailVerified: false,
+      isEmailVerified: false,
+      isPhoneVerified: false,
+      parentInfo: parentData.parentInfo || {},
+      address: parentData.address || {},
+      notificationPreferences: parentData.notificationPreferences || {}
+    });
+    
+    await parent.save();
+    console.log(`Parent created: ${parent.email}`);
+    return parent;
+  } catch (error) {
+    console.error('Error creating parent:', error);
+    throw error;
+  }
 };
 
 // Create admin user if none exists

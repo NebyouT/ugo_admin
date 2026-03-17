@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 mongoose.connect('mongodb+srv://ugoo:ugo1234@cluster0.cq73g0t.mongodb.net/?appName=Cluster0');
 
-const Setting = require('./modules/integrations/models/Setting');
+const Setting = require('../modules/integrations/models/Setting');
 
 async function updateGoogleMapsKey() {
   try {

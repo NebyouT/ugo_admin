@@ -1,6 +1,6 @@
 // server.js - Legacy entry point. Delegates to app.js (the canonical entry point).
 // Use `node app.js` or `npm start` for production.
-require('./app');
+require('../app');
 return;
 
 // ===== LEGACY CODE BELOW (kept for reference, not executed) =====
@@ -145,13 +145,13 @@ app.get('/health', (req, res) => {
 });
 
 // API Routes (MUST come after static files)
-app.use('/api', require('./routes/api'));
-app.use('/api/auth', require('./modules/auth/routes/apiAuth'));
-app.use('/api/admin/auth', require('./modules/auth/routes/adminAuth'));
+app.use('/api', require('../routes/api'));
+app.use('/api/auth', require('../modules/auth/routes/apiAuth'));
+app.use('/api/admin/auth', require('../modules/auth/routes/adminAuth'));
 
 // Page Routes (MUST come last to avoid conflicts with static files)
-app.use('/', require('./routes/web'));
-app.use('/admin', require('./routes/admin'));
+app.use('/', require('../routes/web'));
+app.use('/admin', require('../routes/admin'));
 
 // Seed admin user (for development)
 app.post('/seed-admin', async (req, res) => {
@@ -351,7 +351,7 @@ app.post('/create-sample-users', async (req, res) => {
 });
 
 // User Management API Routes
-app.use('/api/users', require('./modules/user-management/routes/userManagement'));
+app.use('/api/users', require('../modules/user-management/routes/userManagement'));
 
 // Start server
 const startServer = async () => {

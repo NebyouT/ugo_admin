@@ -445,25 +445,33 @@
     // Laravel-style coordinate processing
     function processLaravelCoordinates(coordinatesString) {
         // Parse Laravel coordinate format: "(lng1,lat1),(lng2,lat2),(lng3,lat3)"
+        console.log('Processing Laravel coordinates:', coordinatesString);
         try {
             // Remove parentheses and split by comma
             const cleaned = coordinatesString.replace(/[()]/g, '');
             const points = cleaned.split('),(');
+            console.log('Split points:', points);
             
             const polygonCoords = points.map(point => {
                 const [lng, lat] = point.split(',').map(coord => parseFloat(coord.trim()));
                 return [lng, lat];
             });
             
+            console.log('Polygon coordinates before closing:', polygonCoords);
+            console.log('Number of points:', polygonCoords.length);
+            
             // Close the polygon by adding the first point at the end
             if (polygonCoords.length >= 3) {
                 polygonCoords.push(polygonCoords[0]);
+                console.log('Polygon coordinates after closing:', polygonCoords);
             }
             
-            return {
+            const result = {
                 type: 'Polygon',
                 coordinates: [polygonCoords]
             };
+            console.log('Final result:', result);
+            return result;
         } catch (error) {
             console.error('Error processing coordinates:', error);
             return null;

@@ -1,0 +1,448 @@
+paths:
+  /api/schools:
+    get:
+      tags:
+        - Schools
+      summary: Get all schools
+      description: Get all schools with optional filters
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: active
+          schema:
+            type: boolean
+          description: Filter by active status
+        - in: query
+          name: city
+          schema:
+            type: string
+          description: Filter by city
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [kindergarten, primary, secondary, high_school, university, other]
+          description: Filter by school type
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Items per page
+      responses:
+        200:
+          description: Schools retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      schools:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/School'
+                      total:
+                        type: integer
+                        example: 50
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Schools
+      summary: Create school
+      description: Create new school with location
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - latitude
+                - longitude
+                - address
+              properties:
+                name:
+                  type: string
+                  example: Addis Ababa International School
+                latitude:
+                  type: number
+                  example: 9.0192
+                longitude:
+                  type: number
+                  example: 38.7525
+                address:
+                  type: object
+                  required:
+                    - city
+                    - country
+                  properties:
+                    street:
+                      type: string
+                      example: Bole Road
+                    city:
+                      type: string
+                      example: Addis Ababa
+                    region:
+                      type: string
+                      example: Addis Ababa
+                    country:
+                      type: string
+                      example: Ethiopia
+                    postalCode:
+                      type: string
+                      example: "1000"
+                    formattedAddress:
+                      type: string
+                      example: Bole Road, Addis Ababa, Ethiopia
+                contactInfo:
+                  type: object
+                  properties:
+                    phone:
+                      type: string
+                      example: +251911123456
+                    email:
+                      type: string
+                      example: info@school.edu
+                    website:
+                      type: string
+                      example: https://school.edu
+                type:
+                  type: string
+                  enum: [kindergarten, primary, secondary, high_school, university, other]
+                  example: primary
+                grades:
+                  type: object
+                  properties:
+                    from:
+                      type: string
+                      example: "1"
+                    to:
+                      type: string
+                      example: "8"
+                studentCapacity:
+                  type: integer
+                  example: 500
+                serviceRadius:
+                  type: number
+                  example: 5
+                description:
+                  type: string
+                  example: International curriculum school
+                facilities:
+                  type: array
+                  items:
+                    type: string
+                  example: [library, playground, cafeteria]
+      responses:
+        201:
+          description: School created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: School created successfully
+                  data:
+                    type: object
+                    properties:
+                      school:
+                        $ref: '#/components/schemas/School'
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/schools/{id}:
+    get:
+      tags:
+        - Schools
+      summary: Get school by ID
+      description: Get specific school details
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: School ID
+      responses:
+        200:
+          description: School retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      school:
+                        $ref: '#/components/schemas/School'
+        404:
+          description: School not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Schools
+      summary: Update school
+      description: Update school information
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: School ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+                address:
+                  type: object
+                contactInfo:
+                  type: object
+                type:
+                  type: string
+                grades:
+                  type: object
+                studentCapacity:
+                  type: integer
+                serviceRadius:
+                  type: number
+                description:
+                  type: string
+                facilities:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        200:
+          description: School updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: School updated successfully
+                  data:
+                    type: object
+                    properties:
+                      school:
+                        $ref: '#/components/schemas/School'
+        404:
+          description: School not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Schools
+      summary: Delete school
+      description: Delete school (soft delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: School ID
+      responses:
+        200:
+          description: School deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        404:
+          description: School not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/schools/{id}/status:
+    patch:
+      tags:
+        - Schools
+      summary: Toggle school status
+      description: Activate or deactivate school
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: School ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - isActive
+              properties:
+                isActive:
+                  type: boolean
+                  example: true
+      responses:
+        200:
+          description: School status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: School status updated successfully
+                  data:
+                    type: object
+                    properties:
+                      school:
+                        $ref: '#/components/schemas/School'
+        404:
+          description: School not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/schools/nearby:
+    get:
+      tags:
+        - Schools
+      summary: Find nearby schools
+      description: Find schools near a location within radius
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: latitude
+          required: true
+          schema:
+            type: number
+          description: Latitude
+          example: 9.0192
+        - in: query
+          name: longitude
+          required: true
+          schema:
+            type: number
+          description: Longitude
+          example: 38.7525
+        - in: query
+          name: maxDistance
+          schema:
+            type: number
+            default: 5000
+          description: Maximum distance in meters
+          example: 5000
+      responses:
+        200:
+          description: Nearby schools found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      schools:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: '#/components/schemas/School'
+                            - type: object
+                              properties:
+                                distance:
+                                  type: number
+                                  example: 1250.5
+                      total:
+                        type: integer
+                        example: 5
+                      center:
+                        type: object
+                        properties:
+                          latitude:
+                            type: number
+                            example: 9.0192
+                          longitude:
+                            type: number
+                            example: 38.7525
+                      radius:
+                        type: number
+                        example: 5
+        400:
+          description: Invalid coordinates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

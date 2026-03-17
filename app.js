@@ -87,6 +87,12 @@ app.use('/api/users', require('./modules/user-management/routes/userManagement')
 // Children API
 app.use('/api/children', require('./modules/children/routes/children'));
 
+// Parents API
+app.use('/api/parents', require('./modules/user-management/routes/parents'));
+
+// Admin Parents API
+app.use('/api/admin/parents', require('./modules/user-management/routes/ParentAdminRoutes'));
+
 // Integrations API (3rd party services)
 app.use('/api/integrations', require('./modules/integrations/routes/integrations'));
 

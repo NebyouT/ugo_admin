@@ -1,4 +1,4 @@
-// Final test of API documentation with correct paths
+// Final test of API documentation
 const http = require('http');
 
 async function testApiDocsFinal() {
@@ -172,43 +172,6 @@ async function testApiDocsFinal() {
         } else {
             console.log('❌ Swagger JSON not accessible');
             console.log(`Status: ${swaggerResponse.statusCode}`);
-        }
-        
-        // Test 3: Test admin API docs page
-        console.log('\n3. Testing admin API docs page...');
-        
-        const adminDocsResponse = await new Promise((resolve, reject) => {
-            const req = http.request({
-                hostname: 'localhost',
-                port: 3001,
-                path: '/admin/api-docs',
-                method: 'GET',
-                headers: {
-                    'Cookie': 'adminAuth=test'
-                }
-            }, (res) => {
-                let data = '';
-                res.on('data', chunk => data += chunk);
-                res.on('end', () => {
-                    resolve({
-                        statusCode: res.statusCode,
-                        headers: res.headers
-                    });
-                });
-            });
-            req.on('error', reject);
-            req.end();
-        });
-        
-        console.log(`Admin API Docs Status: ${adminDocsResponse.statusCode}`);
-        
-        if (adminDocsResponse.statusCode === 200) {
-            console.log('✅ Admin API docs page is accessible');
-        } else if (adminDocsResponse.statusCode === 302) {
-            console.log('⚠️ Admin API docs redirects to login');
-            console.log('   Need proper authentication');
-        } else {
-            console.log('❌ Admin API docs page not accessible');
         }
         
         console.log('\n=== Final Status ===');

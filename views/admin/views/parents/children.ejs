@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root { --sidebar-w: 260px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin-left: var(--sidebar-w); }
+        .main { padding: 2rem; min-height: 100vh; max-width: 1400px; }
+        .page-title { font-size: 1.5rem; font-weight: 700; color: #1a1d29; }
+        .page-subtitle { color: #6c757d; font-size: 0.875rem; }
+        .card-panel { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+        .child-card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; transition: all 0.3s ease; }
+        .child-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .child-avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; font-weight: bold; }
+        .parent-avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; font-weight: bold; }
+        .schedule-badge { font-size: 0.7rem; padding: 0.25em 0.6em; border-radius: 4px; font-weight: 500; }
+        .pickup-badge { background: #e3f2fd; color: #1976d2; }
+        .dropoff-badge { background: #f3e5f5; color: #7b1fa2; }
+        .btn-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; }
+        .btn-gradient:hover { background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%); color: white; }
+        .map-container { height: 400px; border-radius: 8px; overflow: hidden; }
+        .form-section { background: #f8f9fa; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; }
+        .form-label { font-weight: 600; color: #495057; margin-bottom: 0.5rem; }
+        .schedule-item { background: white; border: 1px solid #e0e0e0; border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; }
+        .time-input { width: 120px; }
+        .day-selector { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .day-chip { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .day-chip.selected { background: #667eea; color: white; }
+        .day-chip:not(.selected) { background: #e0e0e0; color: #666; }
+        .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 9999; }
+        @media (max-width: 768px) { body { margin-left: 0; } .main { padding: 1rem; } }
+    </style>
+</head>
+<body>
+    <%- include('../../components/sidebar') %>
+
+    <div class="main">
+        <!-- Parent Profile Section -->
+        <div class="card-panel mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="parent-avatar me-3" id="parentAvatar">
+                            <i class="fas fa-user fa-2x"></i>
+                        </div>
+                        <div>
+                            <div class="h5 mb-1" id="parentName">Loading...</div>
+                            <div class="text-muted small" id="parentEmail">Loading...</div>
+                            <div class="text-muted small" id="parentPhone">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button class="btn btn-gradient btn-sm" onclick="window.location.href='/admin/parents'">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Parents
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card-panel text-center">
+                    <div class="h4 text-primary mb-2" id="totalChildrenStat">0</div>
+                    <div class="text-muted">Total Children</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-panel text-center">
+                    <div class="h4 text-success mb-2" id="activeSubscriptionsStat">0</div>
+                    <div class="text-muted">Active Subscriptions</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-panel text-center">
+                    <div class="h4 text-info mb-2" id="todaySchedulesStat">0</div>
+                    <div class="text-muted">Today's Schedules</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-panel text-center">
+                    <div class="h4 text-warning mb-2" id="upcomingPickupsStat">0</div>
+                    <div class="text-muted">Upcoming Pickups</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <div class="page-title">My Children</div>
+                <div class="page-subtitle">Manage your children's transportation schedules</div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary" onclick="showDashboard()">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </button>
+                <button class="btn btn-outline-primary" onclick="showCalendar()">
+                    <i class="fas fa-calendar me-2"></i>Calendar
+                </button>
+                <button class="btn btn-gradient" onclick="showAddChildModal()">
+                    <i class="fas fa-plus me-2"></i>Add Child
+                </button>
+            </div>
+        </div>
+
+        <!-- Children List -->
+        <div class="card-panel">
+            <div class="toolbar">
+                <div class="input-group" style="max-width: 280px;">
+                    <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0" placeholder="Search children..." id="searchInput">
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    <select class="form-select form-select-sm" id="filterStatus">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                    <div class="ms-auto d-flex gap-2 align-items-center">
+                        <span class="text-muted small" id="childrenCount">Loading...</span>
+                        <button class="btn btn-outline-primary btn-sm" onclick="refreshChildren()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="childrenList">
+                <div class="text-center py-5">
+                    <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                    <p class="text-muted mt-3">Loading children...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Child Modal -->
+    <div class="modal fade" id="childModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Add New Child</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="childForm">
+                        <!-- Basic Information -->
+                        <div class="form-section">
+                            <h6 class="mb-3"><i class="fas fa-user me-2"></i>Basic Information</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Child's Name *</label>
+                                        <input type="text" class="form-control" id="childName" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Grade *</label>
+                                        <input type="text" class="form-control" id="childGrade" placeholder="e.g., Grade 3, Class 2A" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pickup Address -->
+                        <div class="form-section">
+                            <h6 class="mb-3"><i class="fas fa-map-marker-alt me-2"></i>Pickup Address</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Address *</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="pickupAddress" placeholder="Enter pickup address" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="searchAddress()">
+                                        <i class="fas fa-search"></i> Search
+                                    </button>
+                                </div>
+                                <small class="text-muted">Search for an address or click on the map to select location</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Landmark (Optional)</label>
+                                <input type="text" class="form-control" id="pickupLandmark" placeholder="e.g., Near blue gate, Behind supermarket">
+                            </div>
+                            <div class="map-container" id="pickupMap">
+                                <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                                    <div class="text-center">
+                                        <i class="fas fa-map-marked-alt fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">Loading map...</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info mt-2" id="locationInfo" style="display: none;">
+                                <i class="fas fa-map-pin me-2"></i>
+                                <span id="locationText">Location found and coordinates set</span>
+                            </div>
+                            <input type="hidden" id="pickupCoordinates">
+                        </div>
+
+                        <!-- Schedule Configuration -->
+                        <div class="form-section">
+                            <h6 class="mb-3"><i class="fas fa-clock me-2"></i>Transportation Schedule</h6>
+                            <p class="text-muted small">Configure pickup and dropoff times. Choose morning only, afternoon only, both sessions, or full day.</p>
+                            
+                            <div class="day-selector mb-3">
+                                <div class="day-chip" data-day="monday" onclick="toggleDay('monday')">Mon</div>
+                                <div class="day-chip" data-day="tuesday" onclick="toggleDay('tuesday')">Tue</div>
+                                <div class="day-chip" data-day="wednesday" onclick="toggleDay('wednesday')">Wed</div>
+                                <div class="day-chip" data-day="thursday" onclick="toggleDay('thursday')">Thu</div>
+                                <div class="day-chip" data-day="friday" onclick="toggleDay('friday')">Fri</div>
+                                <div class="day-chip" data-day="saturday" onclick="toggleDay('saturday')">Sat</div>
+                                <div class="day-chip" data-day="sunday" onclick="toggleDay('sunday')">Sun</div>
+                            </div>
+
+                            <!-- Apply to All Days Button -->
+                            <div class="mb-3" id="applyToAllSection" style="display: none;">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="applyToAllDays()">
+                                    <i class="fas fa-copy me-1"></i>Apply This Schedule to All Days
+                                </button>
+                            </div>
+
+                            <div id="scheduleContainer">
+                                <div class="text-center py-3 text-muted">
+                                    <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                                    <p>Select days to configure schedules</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- School Selection -->
+                        <div class="form-section">
+                            <h6 class="mb-3"><i class="fas fa-school me-2"></i>School Information</h6>
+                            <div class="mb-3">
+                                <label class="form-label">School *</label>
+                                <select class="form-select" id="schoolSelect" required>
+                                    <option value="">Select a school...</option>
+                                </select>
+                                <small class="text-muted">Select the school your child attends</small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-gradient" onclick="saveChild()">
+                        <i class="fas fa-save me-2"></i>Save Child
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let children = [];
+        let selectedDays = new Set();
+        let pickupMap = null;
+        let pickupMarker = null;
+        let googleMapsApiKey = '';
+
+        // Global Google Maps error handler
+        window.gm_authFailure = function() {
+            console.error('Google Maps authentication failed');
+            showToast('Google Maps authentication failed. Using address search only.', 'warning');
+            
+            // Show fallback message in map container
+            const mapContainer = document.getElementById('pickupMap');
+            if (mapContainer) {
+                mapContainer.innerHTML = `
+                    <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                        <div class="text-center p-4">
+                            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                            <h6 class="text-muted">Map Authentication Failed</h6>
+                            <p class="text-muted small">Address search is still available to set pickup location</p>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGoogleMapsAPI();
+            loadSchools();
+            loadParentProfile();
+            loadChildren();
+            initializeEventListeners();
+        });
+
+        // Load Google Maps API from database integration
+        async function loadGoogleMapsAPI() {
+            try {
+                let apiKey = null;
+                
+                try {
+                    // Try to get API key from database integration
+                    const response = await fetch('/api/integrations/google-maps/api-key');
+                    const result = await response.json();
+                    if (result.success && result.data.apiKey) {
+                        apiKey = result.data.apiKey;
+                    }
+                } catch (error) {
+                    console.log('Could not load API key from database, using fallback');
+                }
+
+                // Fallback to hardcoded demo key for development
+                if (!apiKey) {
+                    apiKey = 'AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg';
+                }
+                
+                // For development, use a more permissive key or handle referer issues
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    // Use a different approach for localhost to avoid referer issues
+                    console.log('Using localhost Google Maps configuration');
+                }
+
+                googleMapsApiKey = apiKey;
+                
+                // Load Google Maps script
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places&callback=initMap&loading=async`;
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+                
+            } catch (error) {
+                console.error('Error loading Google Maps API:', error);
+                showToast('Failed to load Google Maps. Address search will still work.', 'warning');
+                
+                // Show fallback message in map container
+                const mapContainer = document.getElementById('pickupMap');
+                if (mapContainer) {
+                    mapContainer.innerHTML = `
+                        <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                            <div class="text-center p-4">
+                                <i class="fas fa-map-marked-alt fa-3x text-warning mb-3"></i>
+                                <h6 class="text-muted">Map unavailable</h6>
+                                <p class="text-muted small">You can still search for addresses to set pickup location</p>
+                                <button class="btn btn-primary btn-sm" onclick="testGeocoding()">
+                                    <i class="fas fa-search me-1"></i>Test Address Search
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Initialize map
+        function initMap() {
+            try {
+                // Default to Addis Ababa coordinates
+                const defaultLocation = { lat: 9.0192, lng: 38.7525 };
+                
+                pickupMap = new google.maps.Map(document.getElementById('pickupMap'), {
+                    center: defaultLocation,
+                    zoom: 13,
+                    styles: [
+                        { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }
+                    ]
+                });
+
+                // Add click listener to map
+                pickupMap.addListener('click', function(event) {
+                    placeMarker(event.latLng);
+                });
+
+                // Initialize autocomplete with new PlaceAutocompleteElement
+                try {
+                    // Try to use the new PlaceAutocompleteElement (recommended)
+                    const autocompleteElement = new google.maps.places.PlaceAutocompleteElement({
+                        element: document.getElementById('pickupAddress')
+                    });
+                    
+                    autocompleteElement.addEventListener('place-changed', () => {
+                        const place = autocompleteElement.place;
+                        if (place.geometry) {
+                            pickupMap.setCenter(place.geometry.location);
+                            pickupMap.setZoom(15);
+                            placeMarker(place.geometry.location);
+                            document.getElementById('pickupAddress').value = place.formatted_address;
+                        }
+                    });
+                } catch (error) {
+                    // Fallback to legacy Autocomplete if new element is not available
+                    console.log('Using legacy Autocomplete as fallback');
+                    const autocomplete = new google.maps.places.Autocomplete(
+                        document.getElementById('pickupAddress'),
+                        { types: ['geocode', 'establishment'] }
+                    );
+
+                    autocomplete.addListener('place_changed', function() {
+                        const place = autocomplete.getPlace();
+                        if (place.geometry) {
+                            pickupMap.setCenter(place.geometry.location);
+                            pickupMap.setZoom(15);
+                            placeMarker(place.geometry.location);
+                            document.getElementById('pickupAddress').value = place.formatted_address;
+                        }
+                    });
+                }
+                
+                console.log('Google Maps initialized successfully');
+            } catch (error) {
+                console.error('Error initializing Google Maps:', error);
+                // Show fallback UI
+                const mapContainer = document.getElementById('pickupMap');
+                if (mapContainer) {
+                    mapContainer.innerHTML = `
+                        <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                            <div class="text-center p-4">
+                                <i class="fas fa-map-marked-alt fa-3x text-warning mb-3"></i>
+                                <h6 class="text-muted">Map unavailable</h6>
+                                <p class="text-muted small">You can still search for addresses to set pickup location</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Place marker on map
+        function placeMarker(location) {
+            if (pickupMarker) {
+                pickupMarker.setMap(null);
+            }
+
+            pickupMarker = new google.maps.Marker({
+                position: location,
+                map: pickupMap,
+                draggable: true,
+                title: 'Pickup Location'
+            });
+
+            pickupMarker.addListener('dragend', function(event) {
+                updateCoordinates(event.latLng);
+            });
+
+            updateCoordinates(location);
+        }
+
+        // Update coordinates
+        function updateCoordinates(location) {
+            const coords = `${location.lat()},${location.lng()}`;
+            document.getElementById('pickupCoordinates').value = coords;
+            
+            // Show success message
+            const locationInfo = document.getElementById('locationInfo');
+            const locationText = document.getElementById('locationText');
+            locationText.textContent = `📍 Location selected: ${location.lat().toFixed(6)}, ${location.lng().toFixed(6)}`;
+            locationInfo.style.display = 'block';
+            locationInfo.className = 'alert alert-success';
+        }
+
+        // Search address using server-side API and update map
+        async function searchAddress() {
+            const address = document.getElementById('pickupAddress').value.trim();
+            if (!address) {
+                showToast('Please enter an address', 'warning');
+                return;
+            }
+
+            try {
+                // Show loading state
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+                button.disabled = true;
+
+                const response = await fetch(`/api/integrations/google-maps/geocode?address=${encodeURIComponent(address)}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    // Update coordinates
+                    const coords = `${result.data.coordinates.latitude},${result.data.coordinates.longitude}`;
+                    document.getElementById('pickupCoordinates').value = coords;
+                    
+                    // Update address with formatted version from Google
+                    document.getElementById('pickupAddress').value = result.data.address;
+                    
+                    // Update map if available
+                    if (pickupMap && google && google.maps) {
+                        const location = new google.maps.LatLng(
+                            result.data.coordinates.latitude,
+                            result.data.coordinates.longitude
+                        );
+                        pickupMap.setCenter(location);
+                        pickupMap.setZoom(15);
+                        placeMarker(location);
+                    }
+                    
+                    // Show success message
+                    const locationInfo = document.getElementById('locationInfo');
+                    const locationText = document.getElementById('locationText');
+                    locationText.textContent = `✅ Location found: ${result.data.address}`;
+                    locationInfo.style.display = 'block';
+                    locationInfo.className = 'alert alert-success';
+                    
+                    showToast('Address found and location set', 'success');
+                } else {
+                    // Show error message
+                    const locationInfo = document.getElementById('locationInfo');
+                    const locationText = document.getElementById('locationText');
+                    locationText.textContent = `❌ ${result.error?.message || 'Address not found'}`;
+                    locationInfo.style.display = 'block';
+                    locationInfo.className = 'alert alert-danger';
+                    
+                    showToast(result.error?.message || 'Address not found', 'error');
+                }
+            } catch (error) {
+                console.error('Search address error:', error);
+                showToast('Failed to search address', 'error');
+                
+                // Show error message
+                const locationInfo = document.getElementById('locationInfo');
+                const locationText = document.getElementById('locationText');
+                locationText.textContent = '❌ Failed to connect to geocoding service';
+                locationInfo.style.display = 'block';
+                locationInfo.className = 'alert alert-danger';
+            } finally {
+                // Restore button state
+                const button = event.target;
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        // Fallback function for when Google Maps doesn't load
+        function updateCoordinatesWithoutMap(coords) {
+            document.getElementById('pickupCoordinates').value = coords;
+            
+            // Show success message
+            const locationInfo = document.getElementById('locationInfo');
+            const locationText = document.getElementById('locationText');
+            locationText.textContent = `📍 Location set: ${coords}`;
+            locationInfo.style.display = 'block';
+            locationInfo.className = 'alert alert-success';
+        }
+
+        // Test Google Maps API
+        function testGeocoding() {
+            const testAddress = "Addis Ababa, Ethiopia";
+            document.getElementById('pickupAddress').value = testAddress;
+            searchAddress();
+        }
+
+        // Load schools from database
+        async function loadSchools() {
+            try {
+                const response = await fetch('/api/schools?active=true');
+                const result = await response.json();
+
+                if (result.success) {
+                    const schoolSelect = document.getElementById('schoolSelect');
+                    schoolSelect.innerHTML = '<option value="">Select a school...</option>';
+                    
+                    result.data.schools.forEach(school => {
+                        const option = document.createElement('option');
+                        option.value = school._id;
+                        option.textContent = `${school.name} - ${school.address.city}`;
+                        schoolSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Load schools error:', error);
+            }
+        }
+
+        // Initialize event listeners
+        function initializeEventListeners() {
+            // Search input
+            document.getElementById('searchInput').addEventListener('input', function() {
+                filterChildren(this.value);
+            });
+
+            // Filter status
+            document.getElementById('filterStatus').addEventListener('change', function() {
+                filterChildrenByStatus(this.value);
+            });
+            
+            // Address input change - clear location info and marker
+            document.getElementById('pickupAddress').addEventListener('input', function() {
+                const locationInfo = document.getElementById('locationInfo');
+                locationInfo.style.display = 'none';
+                document.getElementById('pickupCoordinates').value = '';
+                
+                // Clear map marker
+                if (pickupMarker) {
+                    pickupMarker.setMap(null);
+                    pickupMarker = null;
+                }
+            });
+        }
+
+        // Load parent profile
+        async function loadParentProfile() {
+            try {
+                const response = await fetch('/api/parents/profile');
+                const result = await response.json();
+
+                if (result.success) {
+                    const parent = result.data.parent;
+                    
+                    // Update parent info display
+                    document.getElementById('parentName').textContent = `${parent.firstName} ${parent.lastName}`;
+                    document.getElementById('parentEmail').textContent = parent.email;
+                    document.getElementById('parentPhone').textContent = parent.phone;
+                    
+                    // Update statistics
+                    document.getElementById('totalChildrenStat').textContent = result.data.stats.totalChildren;
+                    document.getElementById('activeSubscriptionsStat').textContent = result.data.stats.activeSubscriptions;
+                    document.getElementById('todaySchedulesStat').textContent = result.data.stats.totalSchedules;
+                    document.getElementById('upcomingPickupsStat').textContent = result.data.stats.totalSchedules;
+                    
+                    // Update parent avatar
+                    if (parent.profileImage) {
+                        document.getElementById('parentAvatar').innerHTML = `<img src="${parent.profileImage}" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;">`;
+                    } else {
+                        const initials = `${parent.firstName.charAt(0)}${parent.lastName.charAt(0)}`.toUpperCase();
+                        document.getElementById('parentAvatar').innerHTML = `<span>${initials}</span>`;
+                    }
+                }
+            } catch (error) {
+                console.error('Load parent profile error:', error);
+            }
+        }
+
+        // Load children
+        async function loadChildren() {
+            try {
+                const response = await fetch('/api/children');
+                const result = await response.json();
+
+                if (result.success) {
+                    children = result.data.children;
+                    renderChildren();
+                    updateChildrenCount();
+                } else {
+                    showToast('Failed to load children', 'danger');
+                }
+            } catch (error) {
+                console.error('Load children error:', error);
+                showToast('Failed to load children', 'danger');
+            }
+        }
+
+        // Render children
+        function renderChildren(childrenToRender = children) {
+            const container = document.getElementById('childrenList');
+            
+            if (childrenToRender.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-child fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No children found</h5>
+                        <p class="text-muted">Click "Add Child" to get started</p>
+                        <button class="btn btn-gradient" onclick="showAddChildModal()">
+                            <i class="fas fa-plus me-2"></i>Add Your First Child
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            childrenToRender.forEach(child => {
+                const initials = child.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                const schedules = child.formattedSchedules || {};
+                const subscriptionStatus = child.subscription?.status || 'inactive';
+                const statusColor = subscriptionStatus === 'active' ? 'success' : 'secondary';
+                
+                html += `
+                    <div class="child-card">
+                        <div class="d-flex align-items-start">
+                            <div class="child-avatar me-3">${initials}</div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h5 class="mb-1">${child.name}</h5>
+                                        <p class="text-muted mb-2">${child.grade}</p>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-${statusColor}">${subscriptionStatus}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <small class="text-muted"><i class="fas fa-map-marker-alt me-1"></i></small>
+                                    <small>${child.pickupAddress.address}</small>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <small class="text-muted"><i class="fas fa-school me-1"></i></small>
+                                    <small>${child.school?.name || child.schoolDetails?.name || 'No school'}</small>
+                                    ${child.schoolDetails?.grade ? `<small> - Grade: ${child.schoolDetails.grade}</small>` : ''}
+                                </div>
+                                
+                                <div class="d-flex flex-wrap gap-1 mb-2">
+                `;
+                
+                // Add schedule badges with new format
+                child.schedules.forEach(schedule => {
+                    const sessionIcon = schedule.session === 'morning' ? '🌅' : '🌙';
+                    const typeIcon = schedule.type === 'pickup' ? '📍' : '🏠';
+                    const badgeClass = schedule.type === 'pickup' ? 'pickup-badge' : 'dropoff-badge';
+                    html += `<span class="schedule-badge ${badgeClass}">${sessionIcon} ${typeIcon} ${schedule.day.charAt(0).toUpperCase() + schedule.day.slice(1, 3)} ${schedule.time}</span>`;
+                });
+                
+                html += `
+                                </div>
+                                
+                                ${child.subscription?.driver ? 
+                                    `<span class="badge bg-info">Driver: ${child.subscription.driver.firstName}</span>` : 
+                                    `<span class="badge bg-secondary">No driver assigned</span>`
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Update children count
+        function updateChildrenCount() {
+            document.getElementById('childrenCount').textContent = `${children.length} children`;
+        }
+
+        // Filter children
+        function filterChildren(searchTerm) {
+            const filtered = children.filter(child => 
+                child.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                child.grade.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                child.pickupAddress.address.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            renderChildren(filtered);
+        }
+
+        // Filter children by status
+        function filterChildrenByStatus(status) {
+            const filtered = status ? 
+                children.filter(child => child.subscription?.status === status) : 
+                children;
+            renderChildren(filtered);
+        }
+
+        // Refresh children
+        async function refreshChildren() {
+            const refreshBtn = event.target;
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            await loadChildren();
+            
+            setTimeout(() => {
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+            }, 1000);
+        }
+
+        // Show add child modal
+        function showAddChildModal() {
+            document.getElementById('modalTitle').textContent = 'Add New Child';
+            document.getElementById('childForm').reset();
+            selectedDays.clear();
+            document.querySelectorAll('.day-chip').forEach(chip => chip.classList.remove('selected'));
+            updateScheduleUI();
+            
+            // Clear location info and map
+            const locationInfo = document.getElementById('locationInfo');
+            locationInfo.style.display = 'none';
+            document.getElementById('pickupCoordinates').value = '';
+            
+            // Clear map marker
+            if (pickupMarker) {
+                pickupMarker.setMap(null);
+                pickupMarker = null;
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('childModal'));
+            modal.show();
+        }
+
+        // Toggle day selection
+        function toggleDay(day) {
+            const chip = document.querySelector(`[data-day="${day}"]`);
+            if (selectedDays.has(day)) {
+                selectedDays.delete(day);
+                chip.classList.remove('selected');
+            } else {
+                selectedDays.add(day);
+                chip.classList.add('selected');
+            }
+            updateScheduleUI();
+        }
+
+        // Update schedule UI with correct transportation logic
+        function updateScheduleUI() {
+            const container = document.getElementById('scheduleContainer');
+            const applyToAllSection = document.getElementById('applyToAllSection');
+            
+            if (selectedDays.size === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-3 text-muted">
+                        <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                        <p>Select days to configure schedules</p>
+                    </div>
+                `;
+                applyToAllSection.style.display = 'none';
+                return;
+            }
+
+            // Show apply to all button if there are selected days
+            applyToAllSection.style.display = 'block';
+
+            let html = '';
+            selectedDays.forEach(day => {
+                const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+                html += `
+                    <div class="schedule-item">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">${dayName}</h6>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <input type="radio" class="btn-check" name="scheduleType_${day}" id="morningOnly_${day}" value="morning-only" onchange="toggleScheduleType('${day}', 'morning-only')" checked>
+                                <label class="btn btn-outline-primary" for="morningOnly_${day}">🌅 Morning Only</label>
+                                
+                                <input type="radio" class="btn-check" name="scheduleType_${day}" id="afternoonOnly_${day}" value="afternoon-only" onchange="toggleScheduleType('${day}', 'afternoon-only')">
+                                <label class="btn btn-outline-primary" for="afternoonOnly_${day}">🌙 Afternoon Only</label>
+                                
+                                <input type="radio" class="btn-check" name="scheduleType_${day}" id="both_${day}" value="both" onchange="toggleScheduleType('${day}', 'both')">
+                                <label class="btn btn-outline-primary" for="both_${day}">🌅🌙 Both Sessions</label>
+                                
+                                <input type="radio" class="btn-check" name="scheduleType_${day}" id="fullDay_${day}" value="full-day" onchange="toggleScheduleType('${day}', 'full-day')">
+                                <label class="btn btn-outline-primary" for="fullDay_${day}">🌅🌙 Full Day</label>
+                            </div>
+                        </div>
+                        
+                        <div id="scheduleFields_${day}">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label small">Morning Pickup Time</label>
+                                    <input type="time" class="form-control time-input" data-day="${day}" data-type="pickup" data-session="morning">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small">Morning Dropoff Time</label>
+                                    <input type="time" class="form-control time-input" data-day="${day}" data-type="dropoff" data-session="morning">
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-2" id="afternoonFields_${day}" style="display: none;">
+                                <div class="col-md-6">
+                                    <label class="form-label small">Afternoon Pickup Time</label>
+                                    <input type="time" class="form-control time-input" data-day="${day}" data-type="pickup" data-session="afternoon">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small">Afternoon Dropoff Time</label>
+                                    <input type="time" class="form-control time-input" data-day="${day}" data-type="dropoff" data-session="afternoon">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Toggle schedule type for a specific day
+        function toggleScheduleType(day, type) {
+            const afternoonFields = document.getElementById(`afternoonFields_${day}`);
+            
+            // Show afternoon fields for both sessions, afternoon only, and full day
+            if (type === 'both' || type === 'afternoon-only' || type === 'full-day') {
+                afternoonFields.style.display = 'block';
+            } else {
+                afternoonFields.style.display = 'none';
+                // Clear afternoon times
+                afternoonFields.querySelectorAll('input').forEach(input => input.value = '');
+            }
+            
+            // For morning only, hide afternoon fields
+            if (type === 'morning-only') {
+                afternoonFields.style.display = 'none';
+                afternoonFields.querySelectorAll('input').forEach(input => input.value = '');
+            }
+        }
+
+        // Apply schedule to all days
+        function applyToAllDays() {
+            // Get the first selected day's schedule as template
+            const firstDay = Array.from(selectedDays)[0];
+            if (!firstDay) return;
+            
+            const scheduleType = document.querySelector(`input[name="scheduleType_${firstDay}"]:checked`)?.value || 'morning-only';
+            const morningPickup = document.querySelector(`input[data-day="${firstDay}"][data-type="pickup"][data-session="morning"]`)?.value || '';
+            const morningDropoff = document.querySelector(`input[data-day="${firstDay}"][data-type="dropoff"][data-session="morning"]`)?.value || '';
+            const afternoonPickup = document.querySelector(`input[data-day="${firstDay}"][data-type="pickup"][data-session="afternoon"]`)?.value || '';
+            const afternoonDropoff = document.querySelector(`input[data-day="${firstDay}"][data-type="dropoff"][data-session="afternoon"]`)?.value || '';
+            
+            // Apply to all other selected days
+            selectedDays.forEach(day => {
+                if (day === firstDay) return; // Skip the template day
+                
+                // Set schedule type
+                const scheduleRadio = document.querySelector(`input[name="scheduleType_${day}"][value="${scheduleType}"]`);
+                if (scheduleRadio) {
+                    scheduleRadio.checked = true;
+                    toggleScheduleType(day, scheduleType);
+                }
+                
+                // Set morning times
+                const morningPickupInput = document.querySelector(`input[data-day="${day}"][data-type="pickup"][data-session="morning"]`);
+                const morningDropoffInput = document.querySelector(`input[data-day="${day}"][data-type="dropoff"][data-session="morning"]`);
+                if (morningPickupInput) morningPickupInput.value = morningPickup;
+                if (morningDropoffInput) morningDropoffInput.value = morningDropoff;
+                
+                // Set afternoon times if applicable
+                if (scheduleType === 'both' || scheduleType === 'afternoon-only' || scheduleType === 'full-day') {
+                    const afternoonPickupInput = document.querySelector(`input[data-day="${day}"][data-type="pickup"][data-session="afternoon"]`);
+                    const afternoonDropoffInput = document.querySelector(`input[data-day="${day}"][data-type="dropoff"][data-session="afternoon"]`);
+                    if (afternoonPickupInput) afternoonPickupInput.value = afternoonPickup;
+                    if (afternoonDropoffInput) afternoonDropoffInput.value = afternoonDropoff;
+                }
+            });
+            
+            showToast('Schedule applied to all selected days', 'success');
+        }
+
+        // Save child
+        async function saveChild() {
+            try {
+                // Disable save button to prevent double submission
+                const saveButton = event.target;
+                const originalText = saveButton.innerHTML;
+                saveButton.disabled = true;
+                saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+
+                const formData = collectFormData();
+                
+                if (!validateFormData(formData)) {
+                    // Re-enable button
+                    saveButton.disabled = false;
+                    saveButton.innerHTML = originalText;
+                    return;
+                }
+
+                const response = await fetch('/api/children', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Child added successfully', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('childModal')).hide();
+                    loadChildren();
+                } else {
+                    showToast(result.error?.message || 'Failed to add child', 'danger');
+                }
+            } catch (error) {
+                console.error('Save child error:', error);
+                showToast('Failed to add child: ' + (error.message || 'Unknown error'), 'danger');
+            } finally {
+                // Re-enable save button
+                const saveButton = event.target;
+                saveButton.disabled = false;
+                saveButton.innerHTML = '<i class="fas fa-save me-2"></i>Save Child';
+            }
+        }
+
+        // Collect form data with correct schedule logic
+        function collectFormData() {
+            const schedules = [];
+            
+            // Collect schedule data based on selected type for each day
+            selectedDays.forEach(day => {
+                const scheduleType = document.querySelector(`input[name="scheduleType_${day}"]:checked`)?.value || 'morning-only';
+                
+                // Morning Only: Only morning pickup/dropoff
+                if (scheduleType === 'morning-only') {
+                    const morningPickup = document.querySelector(`input[data-day="${day}"][data-type="pickup"][data-session="morning"]`);
+                    const morningDropoff = document.querySelector(`input[data-day="${day}"][data-type="dropoff"][data-session="morning"]`);
+                    
+                    if (morningPickup?.value && morningDropoff?.value) {
+                        schedules.push({
+                            day: day,
+                            type: 'pickup',
+                            session: 'morning',
+                            time: morningPickup.value,
+                            isActive: true
+                        });
+                        schedules.push({
+                            day: day,
+                            type: 'dropoff',
+                            session: 'morning',
+                            time: morningDropoff.value,
+                            isActive: true
+                        });
+                    }
+                }
+                
+                // Afternoon Only: Only afternoon pickup/dropoff
+                if (scheduleType === 'afternoon-only') {
+                    const afternoonPickup = document.querySelector(`input[data-day="${day}"][data-type="pickup"][data-session="afternoon"]`);
+                    const afternoonDropoff = document.querySelector(`input[data-day="${day}"][data-type="dropoff"][data-session="afternoon"]`);
+                    
+                    if (afternoonPickup?.value && afternoonDropoff?.value) {
+                        schedules.push({
+                            day: day,
+                            type: 'pickup',
+                            session: 'afternoon',
+                            time: afternoonPickup.value,
+                            isActive: true
+                        });
+                        schedules.push({
+                            day: day,
+                            type: 'dropoff',
+                            session: 'afternoon',
+                            time: afternoonDropoff.value,
+                            isActive: true
+                        });
+                    }
+                }
+                
+                // Both Sessions: Morning and afternoon pickup/dropoff
+                if (scheduleType === 'both') {
+                    const morningPickup = document.querySelector(`input[data-day="${day}"][data-type="pickup"][data-session="morning"]`);
+                    const morningDropoff = document.querySelector(`input[data-day="${day}"][data-type="dropoff"][data-session="morning"]`);
+                    const afternoonPickup = document.querySelector(`input[data-day="${day}"][data-type="pickup"][data-session="afternoon"]`);
+                    const afternoonDropoff = document.querySelector(`input[data-day="${day}"][data-type="dropoff"][data-session="afternoon"]`);
+                    
+                    // Add morning schedules
+                    if (morningPickup?.value && morningDropoff?.value) {
+                        schedules.push({
+                            day: day,
+                            type: 'pickup',
+                            session: 'morning',
+                            time: morningPickup.value,
+                            isActive: true
+                        });
+                        schedules.push({
+                            day: day,
+                            type: 'dropoff',
+                            session: 'morning',
+                            time: morningDropoff.value,
+                            isActive: true
+                        });
+                    }
+                    
+                    // Add afternoon schedules
+                    if (afternoonPickup?.value && afternoonDropoff?.value) {
+                        schedules.push({
+                            day: day,
+                            type: 'pickup',
+                            session: 'afternoon',
+                            time: afternoonPickup.value,
+                            isActive: true
+                        });
+                        schedules.push({
+                            day: day,
+                            type: 'dropoff',
+                            session: 'afternoon',
+                            time: afternoonDropoff.value,
+                            isActive: true
+                        });
+                    }
+                }
+                
+                // Full Day: Morning pickup/dropoff + afternoon pickup/dropoff (same as both)
+                if (scheduleType === 'full-day') {
+                    const morningPickup = document.querySelector(`input[data-day="${day}"][data-type="pickup"][data-session="morning"]`);
+                    const morningDropoff = document.querySelector(`input[data-day="${day}"][data-type="dropoff"][data-session="morning"]`);
+                    const afternoonPickup = document.querySelector(`input[data-day="${day}"][data-type="pickup"][data-session="afternoon"]`);
+                    const afternoonDropoff = document.querySelector(`input[data-day="${day}"][data-type="dropoff"][data-session="afternoon"]`);
+                    
+                    // Add morning schedules
+                    if (morningPickup?.value && morningDropoff?.value) {
+                        schedules.push({
+                            day: day,
+                            type: 'pickup',
+                            session: 'morning',
+                            time: morningPickup.value,
+                            isActive: true
+                        });
+                        schedules.push({
+                            day: day,
+                            type: 'dropoff',
+                            session: 'morning',
+                            time: morningDropoff.value,
+                            isActive: true
+                        });
+                    }
+                    
+                    // Add afternoon schedules
+                    if (afternoonPickup?.value && afternoonDropoff?.value) {
+                        schedules.push({
+                            day: day,
+                            type: 'pickup',
+                            session: 'afternoon',
+                            time: afternoonPickup.value,
+                            isActive: true
+                        });
+                        schedules.push({
+                            day: day,
+                            type: 'dropoff',
+                            session: 'afternoon',
+                            time: afternoonDropoff.value,
+                            isActive: true
+                        });
+                    }
+                }
+            });
+
+            // Parse coordinates safely
+            const coordinatesStr = document.getElementById('pickupCoordinates').value.trim();
+            let coordinates = [];
+            if (coordinatesStr) {
+                try {
+                    coordinates = coordinatesStr.split(',').map(Number);
+                    // Validate coordinates
+                    if (coordinates.length !== 2 || coordinates.some(isNaN)) {
+                        coordinates = [];
+                    }
+                } catch (error) {
+                    console.error('Error parsing coordinates:', error);
+                    coordinates = [];
+                }
+            }
+
+            return {
+                name: document.getElementById('childName').value.trim(),
+                grade: document.getElementById('childGrade').value.trim(),
+                pickupAddress: {
+                    address: document.getElementById('pickupAddress').value.trim(),
+                    coordinates: coordinates,
+                    landmark: document.getElementById('pickupLandmark').value.trim()
+                },
+                schedules: schedules,
+                school: document.getElementById('schoolSelect').value,
+                schoolName: document.getElementById('schoolSelect').options[document.getElementById('schoolSelect').selectedIndex]?.text || ''
+            };
+        }
+
+        // Validate form data
+        function validateFormData(data) {
+            if (!data.name) {
+                showToast('Please enter child name', 'warning');
+                return false;
+            }
+
+            if (!data.grade) {
+                showToast('Please enter grade', 'warning');
+                return false;
+            }
+
+            if (!data.school) {
+                showToast('Please select a school', 'warning');
+                return false;
+            }
+
+            if (!data.pickupAddress.address || !data.pickupAddress.coordinates || data.pickupAddress.coordinates.length !== 2) {
+                showToast('Please set pickup address and find location', 'warning');
+                return false;
+            }
+
+            if (data.schedules.length === 0) {
+                showToast('Please add at least one schedule', 'warning');
+                return false;
+            }
+
+            return true;
+        }
+
+        // Show profile modal (placeholder)
+        function showProfile() {
+            showToast('Profile management coming soon', 'info');
+        }
+
+        // Show settings modal (placeholder)
+        function showSettings() {
+            showToast('Settings management coming soon', 'info');
+        }
+
+        // Show dashboard (placeholder)
+        function showDashboard() {
+            showToast('Dashboard coming soon', 'info');
+        }
+
+        // Show calendar (placeholder)
+        function showCalendar() {
+            showToast('Calendar coming soon', 'info');
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const id = 't' + Date.now();
+            const toastContainer = document.getElementById('toastContainer');
+            if (toastContainer) {
+                toastContainer.insertAdjacentHTML('beforeend',
+                    `<div id="${id}" class="toast align-items-center text-bg-${type} border-0 show" role="alert">
+                        <div class="d-flex">
+                            <div class="toast-body">${message}</div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>`
+                );
+                setTimeout(() => document.getElementById(id)?.remove(), 4000);
+            } else {
+                console.error('Toast container not found');
+                // Fallback to alert if toast container is not available
+                alert(message);
+            }
+        }
+    </script>
+</body>
+</html>

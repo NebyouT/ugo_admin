@@ -90,13 +90,12 @@ router.get('/users', webAuthenticate, webAdminOnly, (req, res) => {
   });
 });
 
-// Parents (filtered customers view)
+// Parents (dedicated parent management view)
 router.get('/parents', webAuthenticate, webAdminOnly, (req, res) => {
-  res.render('admin/views/users/index', {
-    title: 'Parents - UGO Admin',
+  res.render('admin/views/parents/index', {
+    title: 'Parent Management - UGO Admin',
     user: req.user,
-    currentPath: '/parents',
-    filterUserType: 'customer'
+    currentPath: '/parents'
   });
 });
 
@@ -115,6 +114,24 @@ router.get('/children', webAuthenticate, webAdminOnly, (req, res) => {
     title: 'Children Management - UGO Admin',
     user: req.user,
     currentPath: '/children'
+  });
+});
+
+// Parent Children Management
+router.get('/parents/children', webAuthenticate, (req, res) => {
+  res.render('admin/views/parents/children', {
+    title: 'My Children - UGO Admin',
+    user: req.user,
+    currentPath: '/parents/children'
+  });
+});
+
+// Parent Management
+router.get('/parents', webAuthenticate, webAdminOnly, (req, res) => {
+  res.render('admin/views/parents/index', {
+    title: 'Parent Management - UGO Management',
+    user: req.user,
+    currentPath: '/parents'
   });
 });
 

@@ -1,6 +1,6 @@
 // Setup Google Maps Integration in Database
 const mongoose = require('mongoose');
-const Setting = require('./modules/integrations/models/Setting');
+const Setting = require('../modules/integrations/models/Setting');
 
 async function setupGoogleMaps() {
   try {
@@ -49,7 +49,7 @@ async function setupGoogleMaps() {
     console.log('API Key configured:', !!updateResult.liveValues?.api_key);
     
     // Test the GoogleMapsService
-    const GoogleMapsService = require('./modules/integrations/services/GoogleMapsService');
+    const GoogleMapsService = require('../modules/integrations/services/GoogleMapsService');
     try {
       const apiKey = await GoogleMapsService.getAPIKey();
       console.log('API Key retrieved successfully:', apiKey ? 'Yes' : 'No');

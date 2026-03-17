@@ -1,0 +1,346 @@
+paths:
+  /api/children:
+    post:
+      tags:
+        - Children
+      summary: Create new child
+      description: Create a new child profile with school, pickup address, and transportation schedules
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - grade
+                - school
+                - pickupAddress
+                - schedules
+              properties:
+                name:
+                  type: string
+                  example: Sarah Doe
+                grade:
+                  type: string
+                  example: Grade 5
+                school:
+                  type: string
+                  description: School ObjectId
+                  example: 507f1f77bcf86cd799439013
+                schoolName:
+                  type: string
+                  example: Addis Ababa International School
+                pickupAddress:
+                  type: object
+                  required:
+                    - address
+                    - coordinates
+                  properties:
+                    address:
+                      type: string
+                      example: Bole Road, Addis Ababa
+                    coordinates:
+                      type: array
+                      items:
+                        type: number
+                      minItems: 2
+                      maxItems: 2
+                      example: [38.7525, 9.0192]
+                    landmark:
+                      type: string
+                      example: Near blue gate
+                schedules:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - day
+                      - type
+                      - session
+                      - time
+                    properties:
+                      day:
+                        type: string
+                        enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+                        example: monday
+                      type:
+                        type: string
+                        enum: [pickup, dropoff]
+                        example: pickup
+                      session:
+                        type: string
+                        enum: [morning, afternoon]
+                        example: morning
+                      time:
+                        type: string
+                        pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+                        example: "08:00"
+                      isActive:
+                        type: boolean
+                        default: true
+                        example: true
+                emergencyContact:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: Jane Doe
+                    phone:
+                      type: string
+                      example: +251911234568
+                    relationship:
+                      type: string
+                      example: Mother
+                medicalInfo:
+                  type: object
+                  properties:
+                    allergies:
+                      type: array
+                      items:
+                        type: string
+                      example: [Peanuts, Dairy]
+                    medications:
+                      type: array
+                      items:
+                        type: string
+                      example: [Inhaler]
+                    conditions:
+                      type: array
+                      items:
+                        type: string
+                      example: [Asthma]
+                    notes:
+                      type: string
+                      example: Requires inhaler during physical activities
+      responses:
+        201:
+          description: Child created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Child created successfully
+                  data:
+                    type: object
+                    properties:
+                      child:
+                        $ref: '#/components/schemas/Child'
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags:
+        - Children
+      summary: Get all children
+      description: Get all children for authenticated parent
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [active, inactive, pending]
+          description: Filter by status
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Items per page
+      responses:
+        200:
+          description: Children retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      children:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Child'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/children/{id}:
+    get:
+      tags:
+        - Children
+      summary: Get child by ID
+      description: Get specific child details
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Child ID
+      responses:
+        200:
+          description: Child retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      child:
+                        $ref: '#/components/schemas/Child'
+        404:
+          description: Child not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Children
+      summary: Update child
+      description: Update child information
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Child ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                grade:
+                  type: string
+                school:
+                  type: string
+                pickupAddress:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                    coordinates:
+                      type: array
+                      items:
+                        type: number
+                    landmark:
+                      type: string
+                schedules:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      day:
+                        type: string
+                      type:
+                        type: string
+                      session:
+                        type: string
+                      time:
+                        type: string
+                      isActive:
+                        type: boolean
+      responses:
+        200:
+          description: Child updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Child updated successfully
+                  data:
+                    type: object
+                    properties:
+                      child:
+                        $ref: '#/components/schemas/Child'
+        404:
+          description: Child not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Children
+      summary: Delete child
+      description: Delete child (soft delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Child ID
+      responses:
+        200:
+          description: Child deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        404:
+          description: Child not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

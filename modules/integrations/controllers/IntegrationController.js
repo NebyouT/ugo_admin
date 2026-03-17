@@ -482,6 +482,91 @@ class IntegrationController {
     
     return testResult;
   }
+  
+  // Geocode address using Google Maps API
+  static async geocodeAddress(req, res) {
+    try {
+      const { address } = req.query;
+      
+      if (!address) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'MISSING_ADDRESS',
+            message: 'Address parameter is required'
+          }
+        });
+      }
+      
+      const GoogleMapsService = require('../services/GoogleMapsService');
+      const result = await GoogleMapsService.geocode(address);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          data: {
+            address: result.formattedAddress,
+            coordinates: {
+              latitude: result.location.lat,
+              longitude: result.location.lng
+            },
+            results: result.results
+          }
+        });
+      } else if (result.status === 'ZERO_RESULTS') {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: 'ADDRESS_NOT_FOUND',
+            message: 'No results found for this address'
+          }
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: {
+            code: 'GEOCODING_FAILED',
+            message: 'Failed to geocode address'
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Geocode address error:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'GEOCODING_ERROR',
+          message: 'Failed to geocode address',
+          details: error.message
+        }
+      });
+    }
+  }
+  
+  // Get Google Maps API key
+  static async getGoogleMapsAPIKey(req, res) {
+    try {
+      const GoogleMapsService = require('../services/GoogleMapsService');
+      const apiKey = await GoogleMapsService.getAPIKey();
+      
+      res.json({
+        success: true,
+        data: {
+          apiKey: apiKey
+        }
+      });
+    } catch (error) {
+      console.error('Get Google Maps API key error:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'API_KEY_ERROR',
+          message: 'Failed to get Google Maps API key',
+          details: error.message
+        }
+      });
+    }
+  }
 }
 
 module.exports = IntegrationController;

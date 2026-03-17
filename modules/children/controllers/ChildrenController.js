@@ -1,222 +1,295 @@
 const Child = require('../models/Child');
+const User = require('../../user-management/models/User');
 
 class ChildrenController {
-  // GET /children - Get all children for authenticated parent
+  // GET /api/children - Get all children for authenticated parent
   static async getAll(req, res) {
     try {
-      const children = await Child.find({ parent: req.user._id, isActive: true })
+      const { page = 1, limit = 10, day, active = true } = req.query;
+      
+      const children = await Child.find({ 
+        parent: req.user._id, 
+        isActive: active === 'true' 
+      })
+        .populate('subscription.driver', 'firstName lastName phone')
+        .populate('subscription.group', 'name')
         .sort({ createdAt: -1 })
+        .limit(limit * 1)
+        .skip((page - 1) * limit)
         .lean();
 
-      const formatted = children.map(c => ({
-        id: c._id,
-        full_name: c.fullName,
-        school: c.school && c.school.name ? c.school : null,
-        grade: c.grade,
-        pickup_location: c.pickupLocation && c.pickupLocation.address ? c.pickupLocation : null,
-        subscription: c.subscription && c.subscription.status ? {
-          id: c.subscription.id,
-          status: c.subscription.status,
-          group_name: c.subscription.groupName,
-          driver_name: c.subscription.driverName
-        } : null,
-        created_at: c.createdAt
+      const total = await Child.countDocuments({ 
+        parent: req.user._id, 
+        isActive: active === 'true' 
+      });
+
+      const formatted = children.map(child => ({
+        id: child._id,
+        name: child.name,
+        grade: child.grade,
+        pickupAddress: child.pickupAddress,
+        schedules: child.formattedSchedules,
+        school: child.school,
+        subscription: child.subscription,
+        createdAt: child.createdAt,
+        updatedAt: child.updatedAt
       }));
 
       res.json({
         success: true,
-        data: { children: formatted, total: formatted.length }
+        message: 'Children retrieved successfully',
+        data: {
+          children: formatted,
+          pagination: {
+            total,
+            page: parseInt(page),
+            pages: Math.ceil(total / limit),
+            limit: parseInt(limit)
+          }
+        }
       });
     } catch (error) {
       console.error('Get children error:', error);
       res.status(500).json({
         success: false,
-        error: { code: 'SERVER_ERROR', message: 'Failed to fetch children' }
+        error: {
+          code: 'GET_CHILDREN_FAILED',
+          message: 'Failed to retrieve children',
+          details: error.message
+        }
       });
     }
   }
 
-  // GET /children/:id - Get single child
-  static async getOne(req, res) {
+  // GET /api/children/:id - Get specific child
+  static async getById(req, res) {
     try {
-      const child = await Child.findOne({
-        _id: req.params.id,
+      const child = await Child.findOne({ 
+        _id: req.params.id, 
         parent: req.user._id,
-        isActive: true
-      }).lean();
+        isActive: true 
+      })
+        .populate('subscription.driver', 'firstName lastName phone vehicle')
+        .populate('subscription.group', 'name description')
+        .lean();
 
       if (!child) {
         return res.status(404).json({
           success: false,
-          error: { code: 'CHILD_NOT_FOUND', message: 'Child not found' }
+          error: {
+            code: 'CHILD_NOT_FOUND',
+            message: 'Child not found'
+          }
         });
       }
 
       const formatted = {
         id: child._id,
-        full_name: child.fullName,
-        date_of_birth: child.dateOfBirth,
-        gender: child.gender,
-        school: child.school,
+        name: child.name,
         grade: child.grade,
-        photo: child.photo,
-        pickup_location: child.pickupLocation,
-        emergency_contact: child.emergencyContact,
-        medical_notes: child.medicalNotes,
-        subscription: child.subscription && child.subscription.status ? {
-          id: child.subscription.id,
-          status: child.subscription.status,
-          group: child.subscription.group,
-          driver: child.subscription.driver,
-          schedule: child.subscription.schedule ? {
-            pickup_time: child.subscription.schedule.pickupTime,
-            drop_time: child.subscription.schedule.dropTime
-          } : null,
-          price: child.subscription.price,
-          start_date: child.subscription.startDate,
-          payment_due: child.subscription.paymentDue
-        } : null,
-        created_at: child.createdAt,
-        updated_at: child.updatedAt
+        pickupAddress: child.pickupAddress,
+        schedules: child.schedules,
+        formattedSchedules: child.formattedSchedules,
+        school: child.school,
+        subscription: child.subscription,
+        createdAt: child.createdAt,
+        updatedAt: child.updatedAt
       };
 
-      res.json({ success: true, data: { child: formatted } });
+      res.json({
+        success: true,
+        message: 'Child retrieved successfully',
+        data: { child: formatted }
+      });
     } catch (error) {
       console.error('Get child error:', error);
       res.status(500).json({
         success: false,
-        error: { code: 'SERVER_ERROR', message: 'Failed to fetch child' }
+        error: {
+          code: 'GET_CHILD_FAILED',
+          message: 'Failed to retrieve child',
+          details: error.message
+        }
       });
     }
   }
 
-  // POST /children - Add new child
+  // POST /api/children - Create new child
   static async create(req, res) {
     try {
-      const { full_name, date_of_birth, gender, school_id, grade, pickup_location, emergency_contact, medical_notes, photo } = req.body;
+      const {
+        name,
+        grade,
+        pickupAddress,
+        schedules,
+        school,
+        schoolName
+      } = req.body;
 
-      // Validation
-      const errors = {};
-      if (!full_name) errors.full_name = 'Full name is required';
-      if (!pickup_location || !pickup_location.address) errors.pickup_location = 'Pickup location is required';
+      // Validate required fields
+      if (!name || !grade || !pickupAddress || !schedules || !school) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'MISSING_REQUIRED_FIELDS',
+            message: 'Name, grade, pickup address, schedules, and school are required'
+          }
+        });
+      }
 
-      if (Object.keys(errors).length > 0) {
+      // Validate pickup address coordinates
+      if (!pickupAddress.coordinates || 
+          !Array.isArray(pickupAddress.coordinates) || 
+          pickupAddress.coordinates.length !== 2) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_COORDINATES',
+            message: 'Valid pickup address coordinates are required'
+          }
+        });
+      }
+
+      // Validate schedules (must have 2 or 4 entries per day)
+      const scheduleValidation = ChildController.validateSchedules(schedules);
+      if (!scheduleValidation.isValid) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_SCHEDULES',
+            message: scheduleValidation.error
+          }
+        });
+      }
+
+      // Create child
+      const child = new Child({
+        parent: req.user._id,
+        name: name.trim(),
+        grade: grade.trim(),
+        pickupAddress: {
+          address: pickupAddress.address.trim(),
+          coordinates: pickupAddress.coordinates,
+          landmark: pickupAddress.landmark?.trim() || ''
+        },
+        schedules: schedules,
+        school: school,
+        schoolDetails: {
+          name: schoolName || '',
+          grade: grade.trim()
+        },
+        createdBy: req.user._id
+      });
+
+      await child.save();
+
+      // Populate references for response
+      await child.populate('subscription.driver', 'firstName lastName phone');
+      await child.populate('school', 'name address city');
+
+      res.status(201).json({
+        success: true,
+        message: 'Child created successfully',
+        data: {
+          child: {
+            id: child._id,
+            name: child.name,
+            grade: child.grade,
+            pickupAddress: child.pickupAddress,
+            schedules: child.schedules,
+            formattedSchedules: child.formattedSchedules,
+            school: child.school,
+            schoolDetails: child.schoolDetails,
+            subscription: child.subscription,
+            createdAt: child.createdAt
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Create child error:', error);
+      
+      // Handle validation errors
+      if (error.name === 'ValidationError') {
+        const errors = Object.values(error.errors).map(err => err.message);
         return res.status(400).json({
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Missing required fields',
+            message: 'Validation failed',
             details: errors
           }
         });
       }
 
-      const child = new Child({
-        parent: req.user._id,
-        fullName: full_name,
-        dateOfBirth: date_of_birth || null,
-        gender: gender || null,
-        school: school_id ? { id: school_id, name: school_id } : null,
-        grade: grade || null,
-        photo: photo || null,
-        pickupLocation: pickup_location ? {
-          address: pickup_location.address,
-          lat: pickup_location.lat || null,
-          lng: pickup_location.lng || null
-        } : null,
-        emergencyContact: emergency_contact ? {
-          name: emergency_contact.name,
-          phone: emergency_contact.phone,
-          relationship: emergency_contact.relationship
-        } : null,
-        medicalNotes: medical_notes || null
-      });
-
-      await child.save();
-
-      res.status(201).json({
-        success: true,
-        message: 'Child added successfully',
-        data: {
-          child: {
-            id: child._id,
-            full_name: child.fullName,
-            date_of_birth: child.dateOfBirth,
-            gender: child.gender,
-            school: child.school,
-            grade: child.grade,
-            photo: child.photo,
-            pickup_location: child.pickupLocation,
-            subscription: null,
-            created_at: child.createdAt
-          },
-          next_step: 'search_group'
-        }
-      });
-    } catch (error) {
-      console.error('Create child error:', error);
       res.status(500).json({
         success: false,
-        error: { code: 'SERVER_ERROR', message: error.message || 'Failed to add child' }
+        error: {
+          code: 'CREATE_CHILD_FAILED',
+          message: 'Failed to create child',
+          details: error.message
+        }
       });
     }
   }
 
-  // PUT /children/:id - Update child
+  // PUT /api/children/:id - Update child
   static async update(req, res) {
     try {
-      const child = await Child.findOne({
-        _id: req.params.id,
+      const child = await Child.findOne({ 
+        _id: req.params.id, 
         parent: req.user._id,
-        isActive: true
+        isActive: true 
       });
 
       if (!child) {
         return res.status(404).json({
           success: false,
-          error: { code: 'CHILD_NOT_FOUND', message: 'Child not found' }
+          error: {
+            code: 'CHILD_NOT_FOUND',
+            message: 'Child not found'
+          }
         });
       }
 
-      // Cannot change school if subscription is active
-      if (req.body.school_id && child.subscription && child.subscription.status === 'active') {
-        if (req.body.school_id !== child.school?.id) {
+      const {
+        name,
+        grade,
+        pickupAddress,
+        schedules,
+        school
+      } = req.body;
+
+      // Validate schedules if provided
+      if (schedules) {
+        const scheduleValidation = ChildController.validateSchedules(schedules);
+        if (!scheduleValidation.isValid) {
           return res.status(400).json({
             success: false,
             error: {
-              code: 'CANNOT_CHANGE_SCHOOL',
-              message: 'Cannot change school while subscription is active. Cancel subscription first.'
+              code: 'INVALID_SCHEDULES',
+              message: scheduleValidation.error
             }
           });
         }
       }
 
-      const { full_name, date_of_birth, gender, grade, pickup_location, emergency_contact, medical_notes, photo } = req.body;
-
-      if (full_name) child.fullName = full_name;
-      if (date_of_birth) child.dateOfBirth = date_of_birth;
-      if (gender) child.gender = gender;
-      if (grade) child.grade = grade;
-      if (photo) child.photo = photo;
-      if (medical_notes !== undefined) child.medicalNotes = medical_notes;
-
-      if (pickup_location) {
-        child.pickupLocation = {
-          address: pickup_location.address || child.pickupLocation?.address,
-          lat: pickup_location.lat || child.pickupLocation?.lat,
-          lng: pickup_location.lng || child.pickupLocation?.lng
+      // Update fields
+      if (name) child.name = name.trim();
+      if (grade) child.grade = grade.trim();
+      if (pickupAddress) {
+        child.pickupAddress = {
+          address: pickupAddress.address.trim(),
+          coordinates: pickupAddress.coordinates,
+          landmark: pickupAddress.landmark?.trim() || ''
         };
       }
+      if (schedules) child.schedules = schedules;
+      if (school) child.school = school;
 
-      if (emergency_contact) {
-        child.emergencyContact = {
-          name: emergency_contact.name || child.emergencyContact?.name,
-          phone: emergency_contact.phone || child.emergencyContact?.phone,
-          relationship: emergency_contact.relationship || child.emergencyContact?.relationship
-        };
-      }
-
+      child.updatedBy = req.user._id;
       await child.save();
+
+      await child.populate('subscription.driver', 'firstName lastName phone');
 
       res.json({
         success: true,
@@ -224,65 +297,337 @@ class ChildrenController {
         data: {
           child: {
             id: child._id,
-            full_name: child.fullName,
-            date_of_birth: child.dateOfBirth,
-            gender: child.gender,
-            school: child.school,
+            name: child.name,
             grade: child.grade,
-            photo: child.photo,
-            pickup_location: child.pickupLocation,
-            emergency_contact: child.emergencyContact,
-            updated_at: child.updatedAt
+            pickupAddress: child.pickupAddress,
+            schedules: child.schedules,
+            formattedSchedules: child.formattedSchedules,
+            school: child.school,
+            subscription: child.subscription,
+            updatedAt: child.updatedAt
           }
         }
       });
     } catch (error) {
       console.error('Update child error:', error);
+      
+      if (error.name === 'ValidationError') {
+        const errors = Object.values(error.errors).map(err => err.message);
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Validation failed',
+            details: errors
+          }
+        });
+      }
+
       res.status(500).json({
         success: false,
-        error: { code: 'SERVER_ERROR', message: 'Failed to update child' }
+        error: {
+          code: 'UPDATE_CHILD_FAILED',
+          message: 'Failed to update child',
+          details: error.message
+        }
       });
     }
   }
 
-  // DELETE /children/:id - Delete child
+  // DELETE /api/children/:id - Soft delete child
   static async delete(req, res) {
     try {
-      const child = await Child.findOne({
-        _id: req.params.id,
+      const child = await Child.findOne({ 
+        _id: req.params.id, 
         parent: req.user._id,
-        isActive: true
+        isActive: true 
       });
 
       if (!child) {
         return res.status(404).json({
           success: false,
-          error: { code: 'CHILD_NOT_FOUND', message: 'Child not found' }
-        });
-      }
-
-      if (child.subscription && child.subscription.status === 'active') {
-        return res.status(400).json({
-          success: false,
           error: {
-            code: 'HAS_ACTIVE_SUBSCRIPTION',
-            message: 'Cannot delete child with active subscription. Cancel subscription first.'
+            code: 'CHILD_NOT_FOUND',
+            message: 'Child not found'
           }
         });
       }
 
       child.isActive = false;
+      child.updatedBy = req.user._id;
       await child.save();
 
       res.json({
         success: true,
-        message: 'Child removed successfully'
+        message: 'Child deleted successfully'
       });
     } catch (error) {
       console.error('Delete child error:', error);
       res.status(500).json({
         success: false,
-        error: { code: 'SERVER_ERROR', message: 'Failed to delete child' }
+        error: {
+          code: 'DELETE_CHILD_FAILED',
+          message: 'Failed to delete child',
+          details: error.message
+        }
+      });
+    }
+  }
+
+  // GET /api/children/:id/schedules - Get child's schedules
+  static async getSchedules(req, res) {
+    try {
+      const { day } = req.query;
+      
+      const child = await Child.findOne({ 
+        _id: req.params.id, 
+        parent: req.user._id,
+        isActive: true 
+      });
+
+      if (!child) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'CHILD_NOT_FOUND',
+            message: 'Child not found'
+          }
+        });
+      }
+
+      let schedules = child.getActiveSchedules(day);
+      
+      res.json({
+        success: true,
+        message: 'Schedules retrieved successfully',
+        data: {
+          childId: child._id,
+          childName: child.name,
+          day: day || 'all',
+          schedules: schedules
+        }
+      });
+    } catch (error) {
+      console.error('Get schedules error:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'GET_SCHEDULES_FAILED',
+          message: 'Failed to retrieve schedules',
+          details: error.message
+        }
+      });
+    }
+  }
+
+  // GET /api/children/:id/today - Get child's schedules for today
+  static async getTodaySchedules(req, res) {
+    try {
+      const child = await Child.findOne({ 
+        _id: req.params.id, 
+        parent: req.user._id,
+        isActive: true 
+      });
+
+      if (!child) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'CHILD_NOT_FOUND',
+            message: 'Child not found'
+          }
+        });
+      }
+
+      const todaySchedules = child.getTodaysSchedules();
+      
+      res.json({
+        success: true,
+        message: 'Today\'s schedules retrieved successfully',
+        data: {
+          childId: child._id,
+          childName: child.name,
+          today: new Date().toLocaleDateString(),
+          schedules: todaySchedules
+        }
+      });
+    } catch (error) {
+      console.error('Get today schedules error:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'GET_TODAY_SCHEDULES_FAILED',
+          message: 'Failed to retrieve today\'s schedules',
+          details: error.message
+        }
+      });
+    }
+  }
+
+  // POST /api/children/:id/schedules - Add schedule to child
+  static async addSchedule(req, res) {
+    try {
+      const { type, time, day, notes } = req.body;
+
+      if (!type || !time || !day) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'MISSING_SCHEDULE_FIELDS',
+            message: 'Type, time, and day are required'
+          }
+        });
+      }
+
+      const child = await Child.findOne({ 
+        _id: req.params.id, 
+        parent: req.user._id,
+        isActive: true 
+      });
+
+      if (!child) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'CHILD_NOT_FOUND',
+            message: 'Child not found'
+          }
+        });
+      }
+
+      await child.addSchedule({
+        type,
+        time,
+        day,
+        notes: notes || '',
+        isActive: true
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'Schedule added successfully',
+        data: {
+          childId: child._id,
+          schedules: child.schedules
+        }
+      });
+    } catch (error) {
+      console.error('Add schedule error:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'ADD_SCHEDULE_FAILED',
+          message: 'Failed to add schedule',
+          details: error.message
+        }
+      });
+    }
+  }
+
+  // Utility method to validate schedules
+  static validateSchedules(schedules) {
+    if (!Array.isArray(schedules)) {
+      return { isValid: false, error: 'Schedules must be an array' };
+    }
+
+    // Group schedules by day
+    const schedulesByDay = {};
+    schedules.forEach(schedule => {
+      if (!schedulesByDay[schedule.day]) {
+        schedulesByDay[schedule.day] = [];
+      }
+      schedulesByDay[schedule.day].push(schedule);
+    });
+
+    // Validate each day's schedules
+    for (const [day, daySchedules] of Object.entries(schedulesByDay)) {
+      const pickups = daySchedules.filter(s => s.type === 'pickup');
+      const dropoffs = daySchedules.filter(s => s.type === 'dropoff');
+
+      // Must have 1 or 2 pickups and 1 or 2 dropoffs per day
+      if (pickups.length === 0 || dropoffs.length === 0) {
+        return { 
+          isValid: false, 
+          error: `Each day must have at least one pickup and one dropoff schedule` 
+        };
+      }
+
+      if (pickups.length > 2 || dropoffs.length > 2) {
+        return { 
+          isValid: false, 
+          error: `Each day can have maximum 2 pickups and 2 dropoffs` 
+        };
+      }
+
+      // Validate time format
+      for (const schedule of daySchedules) {
+        if (!/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(schedule.time)) {
+          return { 
+            isValid: false, 
+            error: `Invalid time format for ${schedule.day} ${schedule.type}. Use HH:mm format` 
+          };
+        }
+      }
+    }
+
+    return { isValid: true };
+  }
+
+  // GET /api/children/nearby - Find children near a location (for drivers)
+  static async getNearbyChildren(req, res) {
+    try {
+      const { longitude, latitude, radius = 1000 } = req.query;
+
+      if (!longitude || !latitude) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'MISSING_COORDINATES',
+            message: 'Longitude and latitude are required'
+          }
+        });
+      }
+
+      const children = await Child.find({
+        isActive: true,
+        'pickupAddress.coordinates': {
+          $near: {
+            $geometry: {
+              type: 'Point',
+              coordinates: [parseFloat(longitude), parseFloat(latitude)]
+            },
+            $maxDistance: parseInt(radius)
+          }
+        }
+      })
+        .populate('parent', 'firstName lastName phone')
+        .populate('subscription.driver', 'firstName lastName phone')
+        .lean();
+
+      res.json({
+        success: true,
+        message: 'Nearby children retrieved successfully',
+        data: {
+          children: children.map(child => ({
+            id: child._id,
+            name: child.name,
+            grade: child.grade,
+            pickupAddress: child.pickupAddress,
+            parent: child.parent,
+            subscription: child.subscription,
+            distance: 'Within ' + radius + 'm'
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Get nearby children error:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'GET_NEARBY_CHILDREN_FAILED',
+          message: 'Failed to retrieve nearby children',
+          details: error.message
+        }
       });
     }
   }

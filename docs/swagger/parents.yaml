@@ -1,0 +1,331 @@
+paths:
+  /api/parents/profile:
+    get:
+      tags:
+        - Parents
+      summary: Get parent profile
+      description: Get authenticated parent profile with children
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      parent:
+                        $ref: '#/components/schemas/Parent'
+                      children:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Child'
+                      stats:
+                        type: object
+                        properties:
+                          totalChildren:
+                            type: integer
+                            example: 2
+                          activeSubscriptions:
+                            type: integer
+                            example: 2
+        403:
+          description: Access denied - parent role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/parents:
+    get:
+      tags:
+        - Admin - Parents
+      summary: Get all parents (Admin)
+      description: Get all parents with pagination and filters (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Items per page
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by name, email, or phone
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [active, inactive, suspended]
+          description: Filter by status
+      responses:
+        200:
+          description: Parents retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      parents:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Parent'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        403:
+          description: Access denied - admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Admin - Parents
+      summary: Create parent (Admin)
+      description: Create new parent account (Admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - firstName
+                - lastName
+                - email
+                - phone
+                - password
+              properties:
+                firstName:
+                  type: string
+                  example: John
+                lastName:
+                  type: string
+                  example: Doe
+                email:
+                  type: string
+                  example: john.doe@example.com
+                phone:
+                  type: string
+                  example: +251911234567
+                password:
+                  type: string
+                  example: SecurePass123
+                parentInfo:
+                  type: object
+                  properties:
+                    address:
+                      type: object
+                      properties:
+                        city:
+                          type: string
+                          example: Addis Ababa
+                        country:
+                          type: string
+                          example: Ethiopia
+                    emergencyContact:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: Jane Doe
+                        phone:
+                          type: string
+                          example: +251911234568
+                        relationship:
+                          type: string
+                          example: Spouse
+      responses:
+        201:
+          description: Parent created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Parent created successfully
+                  data:
+                    type: object
+                    properties:
+                      parent:
+                        $ref: '#/components/schemas/Parent'
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/parents/{id}:
+    get:
+      tags:
+        - Admin - Parents
+      summary: Get parent by ID (Admin)
+      description: Get specific parent details (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Parent ID
+      responses:
+        200:
+          description: Parent retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      parent:
+                        $ref: '#/components/schemas/Parent'
+        404:
+          description: Parent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Admin - Parents
+      summary: Update parent (Admin)
+      description: Update parent information (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Parent ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                phone:
+                  type: string
+                parentInfo:
+                  type: object
+                  properties:
+                    address:
+                      type: object
+                      properties:
+                        city:
+                          type: string
+                        country:
+                          type: string
+                    emergencyContact:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        phone:
+                          type: string
+                        relationship:
+                          type: string
+                status:
+                  type: string
+                  enum: [active, inactive, suspended]
+      responses:
+        200:
+          description: Parent updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Parent updated successfully
+                  data:
+                    type: object
+                    properties:
+                      parent:
+                        $ref: '#/components/schemas/Parent'
+        404:
+          description: Parent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Admin - Parents
+      summary: Delete parent (Admin)
+      description: Delete parent account (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Parent ID
+      responses:
+        200:
+          description: Parent deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        404:
+          description: Parent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

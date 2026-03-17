@@ -1,0 +1,329 @@
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter your JWT token
+
+  schemas:
+    # Base Response Schemas
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Operation completed successfully
+        data:
+          type: object
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: ERROR_CODE
+            message:
+              type: string
+              example: Error message description
+            details:
+              type: object
+
+    # User Schema
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        email:
+          type: string
+          example: john.doe@example.com
+        phone:
+          type: string
+          example: +251911234567
+        userType:
+          type: string
+          enum: [admin, customer, driver, employee]
+          example: customer
+        customerType:
+          type: string
+          enum: [parent, student]
+          example: parent
+        status:
+          type: string
+          enum: [active, inactive, suspended, pending]
+          example: active
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # Child Schema
+    Child:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439012
+        parent:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        name:
+          type: string
+          example: Sarah Doe
+        grade:
+          type: string
+          example: Grade 5
+        school:
+          type: string
+          example: 507f1f77bcf86cd799439013
+        schoolDetails:
+          type: object
+          properties:
+            name:
+              type: string
+              example: Addis Ababa International School
+            grade:
+              type: string
+              example: Grade 5
+        pickupAddress:
+          type: object
+          properties:
+            address:
+              type: string
+              example: Bole Road, Addis Ababa
+            coordinates:
+              type: array
+              items:
+                type: number
+              example: [38.7525, 9.0192]
+            landmark:
+              type: string
+              example: Near blue gate
+        schedules:
+          type: array
+          items:
+            type: object
+            properties:
+              day:
+                type: string
+                enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+                example: monday
+              type:
+                type: string
+                enum: [pickup, dropoff]
+                example: pickup
+              session:
+                type: string
+                enum: [morning, afternoon]
+                example: morning
+              time:
+                type: string
+                example: "08:00"
+              isActive:
+                type: boolean
+                example: true
+        subscription:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [active, inactive, pending, cancelled]
+              example: active
+            driver:
+              type: string
+              example: 507f1f77bcf86cd799439014
+        status:
+          type: string
+          enum: [active, inactive, pending]
+          example: active
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # School Schema
+    School:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439013
+        name:
+          type: string
+          example: Addis Ababa International School
+        location:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [Point]
+              example: Point
+            coordinates:
+              type: array
+              items:
+                type: number
+              example: [38.7525, 9.0192]
+        address:
+          type: object
+          properties:
+            street:
+              type: string
+              example: Bole Road
+            city:
+              type: string
+              example: Addis Ababa
+            region:
+              type: string
+              example: Addis Ababa
+            country:
+              type: string
+              example: Ethiopia
+            postalCode:
+              type: string
+              example: "1000"
+            formattedAddress:
+              type: string
+              example: Bole Road, Addis Ababa, Ethiopia
+        contactInfo:
+          type: object
+          properties:
+            phone:
+              type: string
+              example: +251911123456
+            email:
+              type: string
+              example: info@school.edu
+            website:
+              type: string
+              example: https://school.edu
+        type:
+          type: string
+          enum: [kindergarten, primary, secondary, high_school, university, other]
+          example: primary
+        grades:
+          type: object
+          properties:
+            from:
+              type: string
+              example: "1"
+            to:
+              type: string
+              example: "8"
+        studentCapacity:
+          type: integer
+          example: 500
+        currentStudents:
+          type: integer
+          example: 350
+        serviceRadius:
+          type: number
+          example: 5
+        isActive:
+          type: boolean
+          example: true
+        status:
+          type: string
+          enum: [active, inactive, pending_verification]
+          example: active
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # Parent Schema
+    Parent:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        email:
+          type: string
+          example: john.doe@example.com
+        phone:
+          type: string
+          example: +251911234567
+        parentInfo:
+          type: object
+          properties:
+            address:
+              type: object
+              properties:
+                city:
+                  type: string
+                  example: Addis Ababa
+                country:
+                  type: string
+                  example: Ethiopia
+            emergencyContact:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Jane Doe
+                phone:
+                  type: string
+                  example: +251911234568
+                relationship:
+                  type: string
+                  example: Spouse
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Child'
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+          example: active
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # Pagination Schema
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 100
+        page:
+          type: integer
+          example: 1
+        pages:
+          type: integer
+          example: 10
+        limit:
+          type: integer
+          example: 10

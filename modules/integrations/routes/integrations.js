@@ -246,6 +246,47 @@ router.post('/:keyName/test', authenticate, IntegrationController.test);
 
 /**
  * @swagger
+ * /api/integrations/google-maps/geocode:
+ *   get:
+ *     summary: Geocode address using Google Maps API
+ *     tags: [Integrations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: address
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Address to geocode
+ *     responses:
+ *       200:
+ *         description: Geocoding completed
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Server error
+ */
+router.get('/google-maps/geocode', authenticate, IntegrationController.geocodeAddress);
+
+/**
+ * @swagger
+ * /api/integrations/google-maps/api-key:
+ *   get:
+ *     summary: Get Google Maps API key
+ *     tags: [Integrations]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: API key retrieved successfully
+ *       500:
+ *         description: Server error
+ */
+router.get('/google-maps/api-key', authenticate, IntegrationController.getGoogleMapsAPIKey);
+
+/**
+ * @swagger
  * /api/integrations/{keyName}:
  *   delete:
  *     summary: Delete integration
