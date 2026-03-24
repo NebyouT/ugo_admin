@@ -151,7 +151,7 @@ class ChildrenController {
       }
 
       // Validate schedules (must have 2 or 4 entries per day)
-      const scheduleValidation = ChildController.validateSchedules(schedules);
+      const scheduleValidation = ChildrenController.validateSchedules(schedules);
       if (!scheduleValidation.isValid) {
         return res.status(400).json({
           success: false,
@@ -261,7 +261,7 @@ class ChildrenController {
 
       // Validate schedules if provided
       if (schedules) {
-        const scheduleValidation = ChildController.validateSchedules(schedules);
+        const scheduleValidation = ChildrenController.validateSchedules(schedules);
         if (!scheduleValidation.isValid) {
           return res.status(400).json({
             success: false,
