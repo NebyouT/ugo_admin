@@ -12,44 +12,50 @@ paths:
             schema:
               type: object
               required:
-                - firstName
-                - lastName
+                - user_type
+                - full_name
                 - phone
                 - password
-                - userType
+                - confirm_password
               properties:
-                firstName:
+                user_type:
                   type: string
-                  example: John
-                lastName:
+                  enum: [parent, student, driver, admin, employee]
+                  example: parent
+                  description: User type for registration
+                full_name:
                   type: string
-                  example: Doe
+                  example: John Doe
+                  description: Full name (will be split into first and last name)
                 phone:
                   type: string
                   example: "+251911234567"
-                email:
-                  type: string
-                  example: john.doe@example.com
+                  description: Phone number (primary identifier)
                 password:
                   type: string
                   example: SecurePass123
-                userType:
+                  minLength: 8
+                  description: Password (minimum 8 characters)
+                confirm_password:
                   type: string
-                  enum: [customer, driver]
-                  example: customer
-                customerType:
-                  type: string
-                  enum: [parent, student]
-                  example: parent
-                deviceInfo:
+                  example: SecurePass123
+                  description: Password confirmation (must match password)
+                device_info:
                   type: object
+                  description: Device information (optional)
                   properties:
+                    platform:
+                      type: string
+                      example: web
+                    version:
+                      type: string
+                      example: 1.0.0
                     deviceId:
                       type: string
-                    deviceType:
-                      type: string
+                      example: device_12345
                     fcmToken:
                       type: string
+                      example: firebase_push_token
       responses:
         201:
           description: User registered successfully
@@ -63,15 +69,26 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: Registration successful. Please verify your phone number.
+                    example: OTP sent to your phone
                   data:
                     type: object
                     properties:
-                      user:
-                        $ref: '#/components/schemas/User'
-                      requiresOTP:
+                      user_id:
+                        type: string
+                        example: "69c534cddc08a51cee237a90"
+                        description: Newly created user ID
+                      phone:
+                        type: string
+                        example: "+251911234567"
+                        description: Registered phone number
+                      otp_expires_in:
+                        type: integer
+                        example: 300
+                        description: OTP expiration time in seconds (5 minutes)
+                      requires_verification:
                         type: boolean
                         example: true
+                        description: Whether phone verification is required
         400:
           description: Validation error
           content:
@@ -128,14 +145,59 @@ paths:
                     type: object
                     properties:
                       user:
-                        $ref: '#/components/schemas/User'
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            example: "69c534cddc08a51cee237a90"
+                          full_name:
+                            type: string
+                            example: "Test User"
+                          phone:
+                            type: string
+                            example: "+251911234567"
+                          user_type:
+                            type: string
+                            example: "parent"
+                          photo:
+                            type: string
+                            nullable: true
+                            example: null
+                          status:
+                            type: string
+                            example: "active"
+                          created_at:
+                            type: string
+                            format: date-time
+                            example: "2026-03-26T13:29:49.977Z"
                       tokens:
                         type: object
                         properties:
-                          accessToken:
+                          access_token:
                             type: string
-                          refreshToken:
+                            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                          refresh_token:
                             type: string
+                            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                          expires_in:
+                            type: integer
+                            example: 3600
+                            description: Token expiration time in seconds
+                          token_type:
+                            type: string
+                            example: "Bearer"
+                      children_count:
+                        type: integer
+                        example: 0
+                        description: Number of children associated with this parent
+                      active_subscriptions:
+                        type: integer
+                        example: 0
+                        description: Number of active subscriptions
+                      has_pending_payments:
+                        type: boolean
+                        example: false
+                        description: Whether user has pending payments
         401:
           description: Invalid credentials
           content:
@@ -148,7 +210,7 @@ paths:
       tags:
         - Authentication
       summary: Verify OTP
-      description: Verify phone number with OTP code
+      description: Verify phone number with OTP code. For testing, OTP is hardcoded to "123456"
       requestBody:
         required: true
         content:
@@ -167,7 +229,7 @@ paths:
                   example: "123456"
       responses:
         200:
-          description: OTP verified successfully
+          description: Phone number verified successfully
           content:
             application/json:
               schema:
@@ -178,19 +240,48 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: Phone number verified successfully
+                    example: Phone verified successfully
                   data:
                     type: object
                     properties:
                       user:
-                        $ref: '#/components/schemas/User'
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            example: "69c534cddc08a51cee237a90"
+                          full_name:
+                            type: string
+                            example: "Test User"
+                          phone:
+                            type: string
+                            example: "+251911234567"
+                          user_type:
+                            type: string
+                            example: "parent"
+                          status:
+                            type: string
+                            example: "active"
                       tokens:
                         type: object
                         properties:
-                          accessToken:
+                          access_token:
                             type: string
-                          refreshToken:
+                            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                          refresh_token:
                             type: string
+                            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                          expires_in:
+                            type: integer
+                            example: 3600
+                            description: Token expiration time in seconds
+                          token_type:
+                            type: string
+                            example: "Bearer"
+                      next_step:
+                        type: string
+                        example: "add_child"
+                        description: Next recommended step for the user
         400:
           description: Invalid OTP
           content:

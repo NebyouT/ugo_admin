@@ -38,43 +38,42 @@ components:
             details:
               type: object
 
-    # User Schema
+    # User Schema (API Response Format)
     User:
       type: object
       properties:
-        _id:
+        id:
           type: string
-          example: 507f1f77bcf86cd799439011
-        firstName:
+          example: "69c534cddc08a51cee237a90"
+          description: User ID
+        full_name:
           type: string
-          example: John
-        lastName:
-          type: string
-          example: Doe
-        email:
-          type: string
-          example: john.doe@example.com
+          example: "John Doe"
+          description: Full name of the user
         phone:
           type: string
-          example: +251911234567
-        userType:
+          example: "+251911234567"
+          description: Phone number (primary identifier)
+        user_type:
           type: string
-          enum: [admin, customer, driver, employee]
-          example: customer
-        customerType:
+          enum: [parent, student, driver, admin, employee]
+          example: "parent"
+          description: User type
+        photo:
           type: string
-          enum: [parent, student]
-          example: parent
+          nullable: true
+          example: null
+          description: Profile photo URL
         status:
           type: string
           enum: [active, inactive, suspended, pending]
-          example: active
-        createdAt:
+          example: "active"
+          description: Account status
+        created_at:
           type: string
           format: date-time
-        updatedAt:
-          type: string
-          format: date-time
+          example: "2026-03-26T13:29:49.977Z"
+          description: Account creation timestamp
 
     # Child Schema
     Child:
