@@ -1,7 +1,7 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const SchoolController = require('../controllers/SchoolController');
-const { authenticate } = require('../../auth/middleware/auth');
+const SchoolController = require("../controllers/SchoolController");
+const { authenticate } = require("../../auth/middleware/auth");
 
 /**
  * @swagger
@@ -58,7 +58,7 @@ const { authenticate } = require('../../auth/middleware/auth');
  *                     total:
  *                       type: integer
  */
-router.get('/', authenticate, SchoolController.getAll);
+router.get("/", authenticate, SchoolController.getAll);
 
 /**
  * @swagger
@@ -91,60 +91,7 @@ router.get('/', authenticate, SchoolController.getAll);
  *       200:
  *         description: Nearby schools
  */
-router.get('/nearby', authenticate, SchoolController.findNearby);
-
-/**
- * @swagger
- * /api/schools/places/nearby:
- *   get:
- *     summary: Search nearby places using Google Places API
- *     tags: [Schools]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: latitude
- *         required: true
- *         schema:
- *           type: number
- *         description: Latitude of the location
- *       - in: query
- *         name: longitude
- *         required: true
- *         schema:
- *           type: number
- *         description: Longitude of the location
- *       - in: query
- *         name: radius
- *         schema:
- *           type: integer
- *           default: 5000
- *         description: Search radius in meters
- *       - in: query
- *         name: keyword
- *         schema:
- *           type: string
- *           default: school
- *         description: Search keyword
- *     responses:
- *       200:
- *         description: Nearby places found
- */
-router.get('/places/nearby', authenticate, SchoolController.searchNearbyPlaces);
-
-/**
- * @swagger
- * /api/schools/stats:
- *   get:
- *     summary: Get school statistics
- *     tags: [Schools]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: School statistics
- */
-router.get('/stats', authenticate, SchoolController.getStats);
+router.get("/nearby", authenticate, SchoolController.findNearby);
 
 /**
  * @swagger
@@ -167,7 +114,7 @@ router.get('/stats', authenticate, SchoolController.getStats);
  *       404:
  *         description: School not found
  */
-router.get('/:id', authenticate, SchoolController.getOne);
+router.get("/:id", authenticate, SchoolController.getOne);
 
 /**
  * @swagger
@@ -248,7 +195,7 @@ router.get('/:id', authenticate, SchoolController.getOne);
  *       400:
  *         description: Validation error or duplicate school
  */
-router.post('/', authenticate, SchoolController.create);
+router.post("/", authenticate, SchoolController.create);
 
 /**
  * @swagger
@@ -276,7 +223,7 @@ router.post('/', authenticate, SchoolController.create);
  *       404:
  *         description: School not found
  */
-router.put('/:id', authenticate, SchoolController.update);
+router.put("/:id", authenticate, SchoolController.update);
 
 /**
  * @swagger
@@ -307,7 +254,7 @@ router.put('/:id', authenticate, SchoolController.update);
  *       200:
  *         description: Status updated successfully
  */
-router.patch('/:id/status', authenticate, SchoolController.toggleStatus);
+router.patch("/:id/status", authenticate, SchoolController.toggleStatus);
 
 /**
  * @swagger
@@ -329,6 +276,6 @@ router.patch('/:id/status', authenticate, SchoolController.toggleStatus);
  *       404:
  *         description: School not found
  */
-router.delete('/:id', authenticate, SchoolController.delete);
+router.delete("/:id", authenticate, SchoolController.delete);
 
 module.exports = router;
