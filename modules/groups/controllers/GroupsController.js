@@ -1,691 +1,730 @@
-const Group = require('../models/Group');
-const School = require('../../schools/models/School');
-const User = require('../../user-management/models/User');
+const Group = require("../models/Group");
+const School = require("../../schools/models/School");
+const Child = require("../../children/models/Child");
+const User = require("../../user-management/models/User");
+
+const VEHICLE_CAPACITIES = {
+  bajaj: 3,
+  force: 5,
+  electric: 4,
+};
 
 class GroupsController {
-  // 21. POST /groups/search - Search Groups by School & Location
+  // POST /api/groups/search
+  // Finds groups going to the same school
+  // whose pickup_location is within radius_meters of the parent's location
   static async searchGroups(req, res) {
     try {
-      const { school_id, pickup_location, preferred_time } = req.body;
-      
-      // Validation
+      const {
+        school_id,
+        latitude,
+        longitude,
+        radius_meters = 500,
+        vehicle_type,
+      } = req.body;
+
       if (!school_id) {
         return res.status(400).json({
           success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'School ID is required'
-          }
+          error: { code: "VALIDATION_ERROR", message: "school_id is required" },
         });
       }
-      
-      // Check if school exists
+
+      if (!latitude || !longitude) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "latitude and longitude are required",
+          },
+        });
+      }
+
+      // Verify school exists
       const school = await School.findById(school_id);
       if (!school) {
         return res.status(400).json({
           success: false,
-          error: {
-            code: 'INVALID_SCHOOL',
-            message: 'School not found'
-          }
+          error: { code: "INVALID_SCHOOL", message: "School not found" },
         });
       }
-      
-      // Search groups
-      const groups = await Group.searchGroups({
-        school_id,
-        pickup_location,
-        preferred_time
-      });
-      
-      // Format response with estimated prices
-      const formattedGroups = groups.map(group => {
-        const groupData = group.toJSON();
-        
-        // Calculate estimated price if pickup location provided
-        if (pickup_location) {
-          groupData.estimated_price = group.calculatePrice(pickupLocation).total_price;
-        } else {
-          groupData.estimated_price = group.base_price;
-        }
-        
-        // Add voting info if no driver assigned
-        if (!group.driver && group.voting.status === 'active') {
-          groupData.voting = {
-            status: group.voting.status,
-            deadline: group.voting.deadline
-          };
-        }
-        
-        return groupData;
-      });
-      
+
+      // Geospatial query:
+      // 1. Same school
+      // 2. Group's pickup_location is within radius_meters of the parent's location
+      // 3. Status is open (has spots)
+      const query = {
+        isDeleted: false,
+        isActive: true,
+        status: "open",
+        school: school_id,
+        pickup_location: {
+          $near: {
+            $geometry: {
+              type: "Point",
+              coordinates: [parseFloat(longitude), parseFloat(latitude)],
+            },
+            $maxDistance: parseInt(radius_meters),
+          },
+        },
+      };
+
+      if (vehicle_type) query.vehicle_type = vehicle_type;
+
+      const groups = await Group.find(query)
+        .populate("driver", "fullName phone")
+        .populate("school", "name address")
+        .populate("members.child", "name grade")
+        .populate("members.parent", "fullName phone");
+
+      const formattedGroups = groups.map((group) => ({
+        id: group._id,
+        name: group.name,
+        school: group.school,
+        vehicle_type: group.vehicle_type,
+        capacity: group.capacity,
+        current_members: group.current_members,
+        spots_left: group.spots_left,
+        is_available: group.is_available,
+        base_price: group.base_price,
+        pickup_address: group.pickup_address,
+        pickup_location: group.pickup_location,
+        pickup_radius: group.pickup_radius,
+        driver: group.driver,
+        status: group.status,
+        members: group.members
+          .filter((m) => m.status === "active")
+          .map((m) => ({
+            child: m.child,
+            parent: m.parent,
+            joined_at: m.joined_at,
+          })),
+      }));
+
       res.json({
         success: true,
         data: {
           groups: formattedGroups,
           total: formattedGroups.length,
-          suggestion: formattedGroups.length === 0 ? 'You can request a new group' : undefined
-        }
+          search_info: {
+            school: school.name,
+            radius_meters,
+            coordinates: { latitude, longitude },
+          },
+          suggestion:
+            formattedGroups.length === 0
+              ? "No groups found near your location for this school. A new group can be created."
+              : undefined,
+        },
       });
     } catch (error) {
-      console.error('Search groups error:', error);
+      console.error("Search groups error:", error);
       res.status(500).json({
         success: false,
-        error: {
-          code: 'SEARCH_FAILED',
-          message: 'Failed to search groups'
-        }
+        error: { code: "SEARCH_FAILED", message: "Failed to search groups" },
       });
     }
   }
-  
-  // 22. GET /groups - Get All Available Groups
+
+  // POST /api/groups/:id/join
+  // Parent joins their child to a group
+  static async joinGroup(req, res) {
+    try {
+      const { id } = req.params;
+      const { child_id } = req.body;
+      const parentId = req.user._id;
+
+      if (!child_id) {
+        return res.status(400).json({
+          success: false,
+          error: { code: "VALIDATION_ERROR", message: "child_id is required" },
+        });
+      }
+
+      // Check group exists
+      const group = await Group.findById(id);
+      if (!group) {
+        return res.status(404).json({
+          success: false,
+          error: { code: "GROUP_NOT_FOUND", message: "Group not found" },
+        });
+      }
+
+      // Check group is open
+      if (group.status !== "open") {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: "GROUP_NOT_OPEN",
+            message: "This group is not accepting new members",
+          },
+        });
+      }
+
+      // Check child belongs to this parent
+      const child = await Child.findOne({ _id: child_id, parent: parentId });
+      if (!child) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: "CHILD_NOT_FOUND",
+            message: "Child not found or does not belong to you",
+          },
+        });
+      }
+
+      // Add member using model method
+      await group.addMember(child_id, parentId);
+
+      await group.populate("members.child", "name grade");
+      await group.populate("members.parent", "fullName phone");
+
+      res.json({
+        success: true,
+        message: "Successfully joined the group",
+        data: {
+          group_id: group._id,
+          group_name: group.name,
+          child: { id: child._id, name: child.name },
+          spots_left: group.spots_left,
+          status: group.status,
+        },
+      });
+    } catch (error) {
+      console.error("Join group error:", error);
+      if (
+        error.message === "Group is full" ||
+        error.message === "Child is already a member of this group"
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: { code: "JOIN_FAILED", message: error.message },
+        });
+      }
+      res.status(500).json({
+        success: false,
+        error: { code: "JOIN_FAILED", message: "Failed to join group" },
+      });
+    }
+  }
+
+  // POST /api/groups/:id/leave
+  // Parent removes their child from a group
+  static async leaveGroup(req, res) {
+    try {
+      const { id } = req.params;
+      const { child_id } = req.body;
+      const parentId = req.user._id;
+
+      if (!child_id) {
+        return res.status(400).json({
+          success: false,
+          error: { code: "VALIDATION_ERROR", message: "child_id is required" },
+        });
+      }
+
+      const group = await Group.findById(id);
+      if (!group) {
+        return res.status(404).json({
+          success: false,
+          error: { code: "GROUP_NOT_FOUND", message: "Group not found" },
+        });
+      }
+
+      // Verify child belongs to parent
+      const child = await Child.findOne({ _id: child_id, parent: parentId });
+      if (!child) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: "CHILD_NOT_FOUND",
+            message: "Child not found or does not belong to you",
+          },
+        });
+      }
+
+      await group.removeMember(child_id);
+
+      res.json({
+        success: true,
+        message: "Successfully left the group",
+        data: {
+          group_id: group._id,
+          group_name: group.name,
+          child: { id: child._id, name: child.name },
+          spots_left: group.spots_left,
+          status: group.status,
+        },
+      });
+    } catch (error) {
+      console.error("Leave group error:", error);
+      if (error.message === "Child is not an active member of this group") {
+        return res.status(400).json({
+          success: false,
+          error: { code: "LEAVE_FAILED", message: error.message },
+        });
+      }
+      res.status(500).json({
+        success: false,
+        error: { code: "LEAVE_FAILED", message: "Failed to leave group" },
+      });
+    }
+  }
+
+  // GET /api/groups/vehicle-types
+  static async getVehicleTypes(req, res) {
+    res.json({
+      success: true,
+      data: {
+        vehicle_types: Object.entries(VEHICLE_CAPACITIES).map(
+          ([type, max]) => ({
+            type,
+            max_capacity: max,
+            label: type.charAt(0).toUpperCase() + type.slice(1),
+          }),
+        ),
+      },
+    });
+  }
+
+  // GET /api/groups
   static async getAllGroups(req, res) {
     try {
-      const { school_id, status, page = 1, limit = 10 } = req.query;
-      
-      // Build query
+      const {
+        school_id,
+        status,
+        vehicle_type,
+        page = 1,
+        limit = 10,
+      } = req.query;
       const query = { isDeleted: false, isActive: true };
-      
+
       if (school_id) query.school = school_id;
       if (status) query.status = status;
-      
-      // Pagination
+      if (vehicle_type) query.vehicle_type = vehicle_type;
+
       const skip = (page - 1) * limit;
-      
-      // Get groups
       const groups = await Group.find(query)
-        .populate('driver', 'name email phone rating photo')
-        .populate('school', 'name address')
+        .populate("driver", "fullName phone")
+        .populate("school", "name address")
+        .populate("members.child", "name grade")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit));
-      
-      // Get total count
+
       const total = await Group.countDocuments(query);
-      
-      // Format response
-      const formattedGroups = groups.map(group => {
-        const groupData = group.toJSON();
-        delete groupData.voting; // Hide voting in list view
-        return groupData;
-      });
-      
+
       res.json({
         success: true,
         data: {
-          groups: formattedGroups,
+          groups,
           pagination: {
             current_page: parseInt(page),
             total_pages: Math.ceil(total / limit),
             total_items: total,
-            limit: parseInt(limit)
-          }
-        }
+            limit: parseInt(limit),
+          },
+        },
       });
     } catch (error) {
-      console.error('Get all groups error:', error);
+      console.error("Get all groups error:", error);
       res.status(500).json({
         success: false,
-        error: {
-          code: 'FETCH_FAILED',
-          message: 'Failed to fetch groups'
-        }
+        error: { code: "FETCH_FAILED", message: "Failed to fetch groups" },
       });
     }
   }
-  
-  // 23. GET /groups/{id} - Get Group Detail
+
+  // GET /api/groups/:id
   static async getGroupDetail(req, res) {
     try {
-      const { id } = req.params;
-      
-      const group = await Group.findById(id)
-        .populate('driver', 'name email phone rating photo')
-        .populate('school', 'name address start_time end_time');
-      
+      const group = await Group.findById(req.params.id)
+        .populate("driver", "fullName phone")
+        .populate("school", "name address")
+        .populate("members.child", "name grade")
+        .populate("members.parent", "fullName phone");
+
       if (!group) {
         return res.status(404).json({
           success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: 'Group not found'
-          }
+          error: { code: "GROUP_NOT_FOUND", message: "Group not found" },
         });
       }
-      
-      const groupData = group.toJSON();
-      
-      // Add driver vehicle info if driver exists
-      if (group.driver) {
-        // In production, this would populate driver's vehicle details
-        groupData.driver.vehicle = {
-          type: 'Bajaj',
-          color: 'Blue',
-          plate: '3-12345'
-        };
-      }
-      
-      // Add voting candidates if voting is active
-      if (!group.driver && group.voting.status === 'active') {
-        // In production, this would populate driver details for candidates
-        groupData.voting.candidates = group.voting.candidates.map(candidate => ({
-          driver_id: candidate.driver_id,
-          name: 'Driver Name', // Would populate from User model
-          rating: 4.5,
-          votes: candidate.votes
-        }));
-      }
-      
-      res.json({
-        success: true,
-        data: {
-          group: groupData
-        }
-      });
+
+      res.json({ success: true, data: { group } });
     } catch (error) {
-      console.error('Get group detail error:', error);
+      console.error("Get group detail error:", error);
       res.status(500).json({
         success: false,
         error: {
-          code: 'FETCH_FAILED',
-          message: 'Failed to fetch group details'
-        }
+          code: "FETCH_FAILED",
+          message: "Failed to fetch group details",
+        },
       });
     }
   }
-  
-  // 24. GET /groups/{id}/driver - Get Group Driver Info
+
+  // GET /api/groups/:id/driver
   static async getGroupDriver(req, res) {
     try {
-      const { id } = req.params;
-      
-      const group = await Group.findById(id).populate('driver');
-      
+      const group = await Group.findById(req.params.id).populate("driver");
       if (!group) {
         return res.status(404).json({
           success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: 'Group not found'
-          }
+          error: { code: "GROUP_NOT_FOUND", message: "Group not found" },
         });
       }
-      
       if (!group.driver) {
         return res.status(400).json({
           success: false,
           error: {
-            code: 'NO_DRIVER_ASSIGNED',
-            message: 'This group has no driver assigned yet. Voting is in progress.'
-          }
+            code: "NO_DRIVER_ASSIGNED",
+            message: "No driver assigned yet.",
+          },
         });
       }
-      
-      // Get detailed driver info
+
       const driver = await User.findById(group.driver._id);
-      
-      // Mock driver details (in production, this would come from DriverDetail model)
-      const driverData = {
-        id: driver._id,
-        full_name: driver.name,
-        phone: driver.phone || '0933456789',
-        photo: 'https://storage.ugo.et/drivers/driver_001.jpg',
-        rating: {
-          overall: 4.8,
-          safety: 4.9,
-          punctuality: 4.7,
-          communication: 4.6,
-          total_reviews: 45
-        },
-        experience: {
-          total_rides: 120,
-          total_students: 25,
-          member_since: '2025-06-15'
-        },
-        vehicle: {
-          type: 'Bajaj',
-          color: 'Blue',
-          plate: '3-12345',
-          capacity: 8,
-          photo: 'https://storage.ugo.et/vehicles/vehicle_001.jpg'
-        },
-        reviews: [
-          {
-            id: 'review_001',
-            parent_name: 'Meron H.',
-            rating: 5.0,
-            comment: 'Very punctual and safe!',
-            created_at: '2026-02-20T10:00:00Z'
-          }
-        ]
-      };
-      
       res.json({
         success: true,
         data: {
-          driver: driverData
-        }
+          driver: {
+            id: driver._id,
+            full_name: driver.fullName,
+            phone: driver.phone,
+            vehicle_type: group.vehicle_type,
+          },
+        },
       });
     } catch (error) {
-      console.error('Get group driver error:', error);
       res.status(500).json({
         success: false,
-        error: {
-          code: 'FETCH_FAILED',
-          message: 'Failed to fetch driver information'
-        }
+        error: { code: "FETCH_FAILED", message: "Failed to fetch driver" },
       });
     }
   }
-  
-  // 25. GET /groups/{id}/availability - Check Spots Available
+
+  // GET /api/groups/:id/availability
   static async checkAvailability(req, res) {
     try {
-      const { id } = req.params;
-      
-      const group = await Group.findById(id).populate('school', 'name');
-      
+      const group = await Group.findById(req.params.id);
       if (!group) {
         return res.status(404).json({
           success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: 'Group not found'
-          }
+          error: { code: "GROUP_NOT_FOUND", message: "Group not found" },
         });
       }
-      
-      const availability = {
-        group_id: group._id,
-        group_name: group.name,
-        capacity: group.capacity,
-        current_members: group.current_members,
-        spots_left: group.spots_left,
-        is_available: group.is_available,
-        status: group.status
-      };
-      
+
       res.json({
         success: true,
-        data: availability
+        data: {
+          group_id: group._id,
+          group_name: group.name,
+          vehicle_type: group.vehicle_type,
+          capacity: group.capacity,
+          max_capacity: VEHICLE_CAPACITIES[group.vehicle_type],
+          current_members: group.current_members,
+          spots_left: group.spots_left,
+          is_available: group.is_available,
+          status: group.status,
+        },
       });
     } catch (error) {
-      console.error('Check availability error:', error);
       res.status(500).json({
         success: false,
         error: {
-          code: 'CHECK_FAILED',
-          message: 'Failed to check availability'
-        }
+          code: "CHECK_FAILED",
+          message: "Failed to check availability",
+        },
       });
     }
   }
-  
-  // 26. GET /groups/{id}/schedule - Get Pickup/Drop Schedule
-  static async getGroupSchedule(req, res) {
-    try {
-      const { id } = req.params;
-      
-      const group = await Group.findById(id).populate('school', 'name address start_time end_time');
-      
-      if (!group) {
-        return res.status(404).json({
-          success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: 'Group not found'
-          }
-        });
-      }
-      
-      const scheduleData = {
-        group_id: group._id,
-        group_name: group.name,
-        school: {
-          id: group.school._id,
-          name: group.school.name,
-          start_time: group.school.start_time || '08:00',
-          end_time: group.school.end_time || '16:00'
-        },
-        schedule: {
-          morning: {
-            type: 'pickup',
-            start_time: group.schedule.pickup_time,
-            arrival_at_school: '07:50' // Calculate based on pickup time
-          },
-          afternoon: {
-            type: 'drop',
-            start_time: group.schedule.drop_time,
-            end_time: '17:00' // Calculate based on drop time
-          }
-        },
-        days: group.schedule.days
-      };
-      
-      res.json({
-        success: true,
-        data: scheduleData
-      });
-    } catch (error) {
-      console.error('Get schedule error:', error);
-      res.status(500).json({
-        success: false,
-        error: {
-          code: 'FETCH_FAILED',
-          message: 'Failed to fetch schedule'
-        }
-      });
-    }
-  }
-  
-  // 27. GET /groups/{id}/price-estimate - Get Price for My Location
+
+  // GET /api/groups/:id/price-estimate
   static async getPriceEstimate(req, res) {
     try {
-      const { id } = req.params;
-      const { address, lat, lng } = req.query;
-      
-      if (!address || !lat || !lng) {
+      const { lat, lng } = req.query;
+      if (!lat || !lng) {
         return res.status(400).json({
           success: false,
           error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Address, latitude, and longitude are required'
-          }
+            code: "VALIDATION_ERROR",
+            message: "lat and lng are required",
+          },
         });
       }
-      
-      const group = await Group.findById(id);
-      
+
+      const group = await Group.findById(req.params.id);
       if (!group) {
         return res.status(404).json({
           success: false,
-          error: {
-            code: 'GROUP_NOT_FOUND',
-            message: 'Group not found'
-          }
+          error: { code: "GROUP_NOT_FOUND", message: "Group not found" },
         });
       }
-      
-      // Calculate distance (simplified - in production use Google Maps API)
-      const groupLocation = {
-        lat: 9.0192, // Default Addis Ababa coordinates
-        lng: 38.7525
-      };
-      
-      const userLocation = {
-        lat: parseFloat(lat),
-        lng: parseFloat(lng)
-      };
-      
-      // Simple distance calculation
-      const distance = calculateDistance(groupLocation, userLocation);
-      const maxDistance = 5; // 5 km max
-      
-      if (distance > maxDistance) {
-        return res.status(400).json({
-          success: false,
-          error: {
-            code: 'LOCATION_TOO_FAR',
-            message: 'Your location is too far from this group\'s route'
-          },
-          data: {
-            max_distance_km: maxDistance,
-            your_distance_km: distance
-          }
-        });
-      }
-      
-      // Calculate pricing
+
       const pricing = group.calculatePrice({
-        address,
-        lat: userLocation.lat,
-        lng: userLocation.lng
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
       });
-      
-      const priceData = {
-        group_id: group._id,
-        group_name: group.name,
-        pickup_location: {
-          address
-        },
-        pricing
-      };
-      
-      res.json({
-        success: true,
-        data: priceData
-      });
+      res.json({ success: true, data: { group_id: group._id, pricing } });
     } catch (error) {
-      console.error('Get price estimate error:', error);
       res.status(500).json({
         success: false,
         error: {
-          code: 'CALCULATION_FAILED',
-          message: 'Failed to calculate price estimate'
-        }
+          code: "CALCULATION_FAILED",
+          message: "Failed to calculate price",
+        },
       });
     }
   }
-  
-  // Create a new group
+
+  // POST /api/groups
+  // POST /api/groups
   static async create(req, res) {
     try {
       const {
         name,
         school,
-        schedule,
+        vehicle_type,
         capacity,
         base_price,
-        service_radius,
-        description
+        description,
+        start_date,
+        pickup_address,
+        pickup_latitude,
+        pickup_longitude,
+        pickup_radius,
+        child_id,
       } = req.body;
-      
-      // Validation
-      if (!name || !school || !schedule || !capacity || !base_price) {
+
+      if (!name || !school || !vehicle_type || !base_price) {
         return res.status(400).json({
           success: false,
           error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Name, school, schedule, capacity, and base price are required'
-          }
+            code: "VALIDATION_ERROR",
+            message: "name, school, vehicle_type, base_price are required",
+          },
         });
       }
-      
-      // Validate schedule
-      if (!schedule.pickup_time || !schedule.drop_time) {
+
+      if (!pickup_latitude || !pickup_longitude) {
         return res.status(400).json({
           success: false,
           error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Pickup and drop times are required'
-          }
+            code: "VALIDATION_ERROR",
+            message: "pickup_latitude and pickup_longitude are required",
+          },
         });
       }
-      
-      // Check if school exists
-      const School = require('../../schools/models/School');
+
+      if (!VEHICLE_CAPACITIES[vehicle_type]) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: "INVALID_VEHICLE_TYPE",
+            message: `vehicle_type must be one of: ${Object.keys(VEHICLE_CAPACITIES).join(", ")}`,
+          },
+        });
+      }
+
+      const maxCapacity = VEHICLE_CAPACITIES[vehicle_type];
+      const finalCapacity = capacity
+        ? Math.min(parseInt(capacity), maxCapacity)
+        : maxCapacity;
+
       const schoolExists = await School.findById(school);
       if (!schoolExists) {
         return res.status(400).json({
           success: false,
-          error: {
-            code: 'INVALID_SCHOOL',
-            message: 'School not found'
-          }
+          error: { code: "INVALID_SCHOOL", message: "School not found" },
         });
       }
-      
-      const groupData = {
+
+      // Auto-add creator's child as first member
+      let initialMembers = [];
+      if (child_id) {
+        // Use specific child if passed
+        const child = await Child.findOne({
+          _id: child_id,
+          parent: req.user._id,
+        });
+        if (child) {
+          initialMembers = [
+            {
+              child: child._id,
+              parent: req.user._id,
+              joined_at: new Date(),
+              status: "active",
+            },
+          ];
+        }
+      } else {
+        // Auto-find creator's first active child
+        const creatorChild = await Child.findOne({
+          parent: req.user._id,
+          isActive: true,
+        });
+        if (creatorChild) {
+          initialMembers = [
+            {
+              child: creatorChild._id,
+              parent: req.user._id,
+              joined_at: new Date(),
+              status: "active",
+            },
+          ];
+        }
+      }
+
+      const group = new Group({
         name,
         school,
-        schedule: {
-          pickup_time: schedule.pickup_time,
-          drop_time: schedule.drop_time,
-          days: schedule.days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-        },
-        capacity: parseInt(capacity),
+        vehicle_type,
+        capacity: finalCapacity,
         base_price: parseFloat(base_price),
-        current_members: 0,
-        status: 'open',
-        createdBy: req.user?._id
-      };
-      
-      if (service_radius) groupData.service_radius = parseFloat(service_radius);
-      if (description) groupData.description = description;
-      
-      const group = new Group(groupData);
+        pickup_location: {
+          type: "Point",
+          coordinates: [
+            parseFloat(pickup_longitude),
+            parseFloat(pickup_latitude),
+          ],
+        },
+        pickup_address: pickup_address || "",
+        pickup_radius: pickup_radius ? parseInt(pickup_radius) : 500,
+        description: description || "",
+        start_date: start_date ? new Date(start_date) : new Date(),
+        members: initialMembers,
+        status: "open",
+        createdBy: req.user._id,
+      });
+
       await group.save();
-      
-      // Populate school info for response
-      await group.populate('school', 'name address');
-      
+      await group.populate("school", "name address");
+      await group.populate("members.child", "name grade");
+      await group.populate("members.parent", "fullName phone");
+
       res.status(201).json({
         success: true,
-        message: 'Group created successfully',
-        data: { group }
+        message: "Group created successfully",
+        data: {
+          group: {
+            id: group._id,
+            name: group.name,
+            school: group.school,
+            vehicle_type: group.vehicle_type,
+            capacity: group.capacity,
+            max_capacity: maxCapacity,
+            current_members: group.current_members,
+            spots_left: group.spots_left,
+            base_price: group.base_price,
+            pickup_address: group.pickup_address,
+            pickup_location: group.pickup_location,
+            pickup_radius: group.pickup_radius,
+            status: group.status,
+            members: group.members
+              .filter((m) => m.status === "active")
+              .map((m) => ({
+                child: m.child,
+                parent: m.parent,
+                joined_at: m.joined_at,
+              })),
+          },
+        },
       });
     } catch (error) {
-      console.error('Create group error:', error);
+      console.error("Create group error:", error);
+      if (error.name === "ValidationError") {
+        const errors = Object.values(error.errors).map((e) => e.message);
+        return res.status(400).json({
+          success: false,
+          error: { code: "VALIDATION_ERROR", message: errors.join(", ") },
+        });
+      }
       res.status(500).json({
         success: false,
-        error: {
-          code: 'CREATE_FAILED',
-          message: 'Failed to create group'
-        }
+        error: { code: "CREATE_FAILED", message: "Failed to create group" },
       });
     }
   }
-  
-  // Update a group
+
+  // PUT /api/groups/:id
   static async update(req, res) {
     try {
-      const { id } = req.params;
-      const updateData = { ...req.body };
-      
-      // Add updatedBy
-      updateData.updatedBy = req.user?._id;
-      
-      // Validate schedule if provided
-      if (updateData.schedule) {
-        if (!updateData.schedule.pickup_time || !updateData.schedule.drop_time) {
+      const updateData = { ...req.body, updatedBy: req.user?._id };
+
+      if (updateData.vehicle_type) {
+        const max = VEHICLE_CAPACITIES[updateData.vehicle_type];
+        if (!max) {
           return res.status(400).json({
             success: false,
             error: {
-              code: 'VALIDATION_ERROR',
-              message: 'Pickup and drop times are required'
-            }
+              code: "INVALID_VEHICLE_TYPE",
+              message: "Invalid vehicle type",
+            },
           });
         }
+        updateData.capacity = updateData.capacity
+          ? Math.min(parseInt(updateData.capacity), max)
+          : max;
       }
-      
-      // Validate capacity if provided
-      if (updateData.capacity) {
-        updateData.capacity = parseInt(updateData.capacity);
-        if (updateData.capacity < 1 || updateData.capacity > 15) {
-          return res.status(400).json({
-            success: false,
-            error: {
-              code: 'VALIDATION_ERROR',
-              message: 'Capacity must be between 1 and 15'
-            }
-          });
-        }
+
+      if (updateData.pickup_latitude && updateData.pickup_longitude) {
+        updateData.pickup_location = {
+          type: "Point",
+          coordinates: [
+            parseFloat(updateData.pickup_longitude),
+            parseFloat(updateData.pickup_latitude),
+          ],
+        };
+        delete updateData.pickup_latitude;
+        delete updateData.pickup_longitude;
       }
-      
-      // Validate base_price if provided
-      if (updateData.base_price) {
-        updateData.base_price = parseFloat(updateData.base_price);
-        if (updateData.base_price < 0) {
-          return res.status(400).json({
-            success: false,
-            error: {
-              code: 'VALIDATION_ERROR',
-              message: 'Base price cannot be negative'
-            }
-          });
-        }
-      }
-      
-      const group = await Group.findByIdAndUpdate(
-        id,
-        updateData,
-        { new: true, runValidators: true }
-      ).populate('school', 'name address');
-      
+
+      const group = await Group.findByIdAndUpdate(req.params.id, updateData, {
+        new: true,
+        runValidators: true,
+      }).populate("school", "name address");
+
       if (!group) {
         return res.status(404).json({
           success: false,
-          error: {
-            code: 'NOT_FOUND',
-            message: 'Group not found'
-          }
+          error: { code: "NOT_FOUND", message: "Group not found" },
         });
       }
-      
+
       res.json({
         success: true,
-        message: 'Group updated successfully',
-        data: { group }
+        message: "Group updated successfully",
+        data: { group },
       });
     } catch (error) {
-      console.error('Update group error:', error);
+      console.error("Update group error:", error);
       res.status(500).json({
         success: false,
-        error: {
-          code: 'UPDATE_FAILED',
-          message: 'Failed to update group'
-        }
+        error: { code: "UPDATE_FAILED", message: "Failed to update group" },
       });
     }
   }
-  
-  // Delete a group
+
+  // DELETE /api/groups/:id
   static async delete(req, res) {
     try {
-      const { id } = req.params;
-      
-      const group = await Group.findByIdAndDelete(id);
-      
+      const group = await Group.findByIdAndDelete(req.params.id);
       if (!group) {
         return res.status(404).json({
           success: false,
-          error: {
-            code: 'NOT_FOUND',
-            message: 'Group not found'
-          }
+          error: { code: "NOT_FOUND", message: "Group not found" },
         });
       }
-      
-      res.json({
-        success: true,
-        message: 'Group deleted successfully'
-      });
+      res.json({ success: true, message: "Group deleted successfully" });
     } catch (error) {
-      console.error('Delete group error:', error);
+      console.error("Delete group error:", error);
       res.status(500).json({
         success: false,
-        error: {
-          code: 'DELETE_FAILED',
-          message: 'Failed to delete group'
-        }
+        error: { code: "DELETE_FAILED", message: "Failed to delete group" },
       });
     }
   }
-}
-
-// Helper function to calculate distance between two coordinates
-function calculateDistance(coord1, coord2) {
-  const R = 6371; // Earth's radius in kilometers
-  const dLat = (coord2.lat - coord1.lat) * Math.PI / 180;
-  const dLon = (coord2.lng - coord1.lng) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(coord1.lat * Math.PI / 180) * Math.cos(coord2.lat * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
 }
 
 module.exports = GroupsController;

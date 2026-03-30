@@ -1,7 +1,6 @@
 const Child = require("../models/Child");
 
 class ChildrenController {
-  // GET /api/children
   static async getAll(req, res) {
     try {
       const { page = 1, limit = 10, active = true } = req.query;
@@ -238,7 +237,6 @@ class ChildrenController {
     }
   }
 
-  // Private format helper
   static _format(child) {
     return {
       id: child._id,

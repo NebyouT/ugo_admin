@@ -181,7 +181,7 @@ childSchema.index({ "subscription.status": 1 });
 // Virtual for formatted schedules
 childSchema.virtual("formattedSchedules").get(function () {
   const scheduleMap = {};
-  this.schedules.forEach((schedule) => {
+  (this.schedules || []).forEach((schedule) => {
     if (!scheduleMap[schedule.day]) {
       scheduleMap[schedule.day] = { pickup: [], dropoff: [] };
     }
